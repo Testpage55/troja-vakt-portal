@@ -43,27 +43,52 @@ const calculateWorkHours = (startTime, endTime) => {
   if (!startTime || !endTime) return 0
   
   try {
-    // Skapa Date-objekt för samma dag
-    const start = new Date(`2000-01-01T${startTime}:00`)
-    const end = new Date(`2000-01-01T${endTime}:00`)
+    // Normalisera tid till HH:MM format
+    const normalizeTime = (timeStr) => {
+      if (!timeStr) return null
+      const parts = timeStr.split(':')
+      return `${parts[0]}:${parts[1] || '00'}`
+    }
     
-    // Hantera fall där sluttid är nästa dag (efter midnatt)
+    const normalizedStart = normalizeTime(startTime)
+    const normalizedEnd = normalizeTime(endTime)
+    
+    if (!normalizedStart || !normalizedEnd) return 0
+    
+    const today = new Date().toISOString().split('T')[0]
+    const start = new Date(`${today}T${normalizedStart}:00`)
+    const end = new Date(`${today}T${normalizedEnd}:00`)
+    
+    if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+      return 0
+    }
+    
     if (end < start) {
       end.setDate(end.getDate() + 1)
     }
     
     const diffMs = end - start
     const hours = diffMs / (1000 * 60 * 60)
+    const roundedHours = Math.round(hours * 4) / 4
     
-    // Avrunda till närmaste kvart (0.25 timmar)
-    return Math.round(hours * 4) / 4
+    if (roundedHours < 0 || roundedHours > 24) {
+      return 0
+    }
+    
+    return roundedHours
   } catch (error) {
-    console.error('Error calculating hours:', error)
     return 0
   }
 }
 
-function TimeRegistration({ match, guard }) {
+// Utility för att ta bort sekunder från tid
+const removeSeconds = (timeString) => {
+  if (!timeString) return ''
+  const parts = timeString.split(':')
+  return `${parts[0]}:${parts[1]}`
+}
+
+function TimeRegistration({ match, guard, onClose }) {
   const [allMatches, setAllMatches] = useState([])
   const [selectedMatchId, setSelectedMatchId] = useState('')
   const [selectedMatch, setSelectedMatch] = useState(null)
@@ -85,7 +110,6 @@ function TimeRegistration({ match, guard }) {
       const foundMatch = allMatches.find(m => m.id === parseInt(selectedMatchId))
       setSelectedMatch(foundMatch || null)
     } else if (match) {
-      // Om det finns en dagens match, använd den som default
       setSelectedMatch(match)
       setSelectedMatchId(match.id.toString())
     } else {
@@ -108,7 +132,6 @@ function TimeRegistration({ match, guard }) {
     try {
       setLoadingMatches(true)
       
-      // Hämta matcher från de senaste 30 dagarna till 90 dagar framåt
       const thirtyDaysAgo = new Date()
       thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
       
@@ -146,12 +169,12 @@ function TimeRegistration({ match, guard }) {
       
       if (data) {
         setExistingHours(data)
-        setStartTime(data.start_time)
-        setEndTime(data.end_time)
+        // Ta bort sekunder från befintliga tider
+        setStartTime(removeSeconds(data.start_time))
+        setEndTime(removeSeconds(data.end_time))
         setNotes(data.notes || '')
       } else {
         setExistingHours(null)
-        // Återställ till automatiska tider om det inte finns befintliga timmar
         if (selectedMatch?.time) {
           const { startTime: autoStart, endTime: autoEnd } = calculateWorkTimes(selectedMatch.time)
           setStartTime(autoStart)
@@ -160,13 +183,11 @@ function TimeRegistration({ match, guard }) {
         setNotes('')
       }
     } catch (error) {
-      // Inga befintliga timmar
       setExistingHours(null)
       setNotes('')
     }
   }
 
-  // Beräkna timmar med förbättrad logik
   const calculatedHours = calculateWorkHours(startTime, endTime)
 
   const handleSubmit = async (e) => {
@@ -174,30 +195,28 @@ function TimeRegistration({ match, guard }) {
     setSaving(true)
 
     try {
-      // Kontrollera att vi har giltiga tider
-      if (calculatedHours <= 0) {
+      if (calculatedHours <= 0 || isNaN(calculatedHours)) {
         alert('Kontrollera att sluttid är efter starttid')
         setSaving(false)
         return
       }
 
-      if (!selectedMatch) {
+      if (!selectedMatch && selectedMatchId !== 'other') {
         alert('Välj en match först')
         setSaving(false)
         return
       }
 
       const workData = {
-        match_id: selectedMatch.id,
+        match_id: selectedMatchId === 'other' ? null : selectedMatch.id,
         personnel_id: guard.id,
         start_time: startTime,
         end_time: endTime,
-        work_date: selectedMatch.date,
+        work_date: selectedMatch?.date || new Date().toISOString().split('T')[0],
         notes: notes.trim()
       }
 
       if (existingHours) {
-        // Uppdatera befintlig
         const { error } = await supabase
           .from('work_hours')
           .update(workData)
@@ -205,7 +224,6 @@ function TimeRegistration({ match, guard }) {
         
         if (error) throw error
       } else {
-        // Skapa ny
         const { error } = await supabase
           .from('work_hours')
           .insert([workData])
@@ -215,10 +233,13 @@ function TimeRegistration({ match, guard }) {
 
       alert(`Arbetstid sparad! (${calculatedHours} timmar)`)
       
-      // Trigga uppdatering av MyHours komponenten
       window.dispatchEvent(new Event('workHoursSaved'))
       
-      checkExistingHours() // Uppdatera status
+      if (onClose) {
+        setTimeout(() => onClose(), 1000)
+      }
+      
+      checkExistingHours()
     } catch (error) {
       console.error('Error saving work hours:', error)
       alert('Fel vid sparande: ' + (error.message || 'Okänt fel'))
@@ -227,10 +248,8 @@ function TimeRegistration({ match, guard }) {
     }
   }
 
-  // Kontrollera om timmarna avviker från standard
   const isNonStandardHours = calculatedHours !== 4.5
 
-  // Formatera datum för visning
   const formatDate = (dateString) => {
     const date = new Date(dateString)
     const today = new Date()
@@ -258,69 +277,61 @@ function TimeRegistration({ match, guard }) {
     <div className="time-registration">
       <h2>Registrera arbetstid</h2>
       
-      {/* Match-väljare */}
-      <div style={{ marginBottom: '20px' }}>
-        <label>
-          Välj match:
-          {loadingMatches ? (
-            <div style={{ padding: '15px', textAlign: 'center', color: '#666' }}>
-              Laddar matcher...
-            </div>
-          ) : (
-            <select 
-              value={selectedMatchId} 
-              onChange={(e) => setSelectedMatchId(e.target.value)}
-              style={{
-                width: '100%',
-                padding: '15px',
-                border: '2px solid #e2e8f0',
-                borderRadius: '8px',
-                fontSize: '16px',
-                marginTop: '8px',
-                background: 'white'
-              }}
-            >
-              <option value="">Välj en match...</option>
-              {allMatches.map(m => (
-                <option key={m.id} value={m.id}>
-                  {formatDate(m.date)} - {m.opponent} ({m.time || 'TBA'})
-                </option>
-              ))}
-              <option value="other">Annat uppdrag (ingen specifik match)</option>
-            </select>
-          )}
-        </label>
+      {selectedMatch && (
+        <div className="match-info-card">
+          <h3>{guard.name}</h3>
+          <h3>{selectedMatch.opponent}</h3>
+          <div className="match-details">
+            <div>{formatDate(selectedMatch.date)}</div>
+            <div>Match: {selectedMatch.time || 'TBA'}</div>
+          </div>
+        </div>
+      )}
+
+      <div className="standard-hours-info">
+        <h4>Standard: 4,5 timmar</h4>
+        <p>Start 2h före match • Slut 2,5h efter matchstart</p>
+        <p>Justera tiderna nedan om avvikelse behövs</p>
       </div>
 
-      {/* Visar vald match information */}
-      {selectedMatch && (
-        <div style={{ 
-          background: 'linear-gradient(135deg, #ef4444 0%, #f97316 100%)',
-          color: 'white',
-          padding: '15px',
-          borderRadius: '12px',
-          marginBottom: '20px',
-          textAlign: 'center'
+      <div style={{ padding: 'var(--space-xl)', borderBottom: '1px solid var(--gray-100)' }}>
+        <label style={{ 
+          display: 'block',
+          fontWeight: '500',
+          color: 'var(--gray-700)',
+          fontSize: '1rem',
+          marginBottom: 'var(--space-sm)'
         }}>
-          <h3>{selectedMatch.opponent}</h3>
-          <p>📅 {formatDate(selectedMatch.date)} • ⏰ {selectedMatch.time || 'TBA'}</p>
-        </div>
-      )}
-
-      {/* Special handling för "Annat uppdrag" */}
-      {selectedMatchId === 'other' && (
-        <div style={{ 
-          background: '#f1f5f9',
-          padding: '15px',
-          borderRadius: '12px',
-          marginBottom: '20px',
-          textAlign: 'center',
-          border: '2px solid #e2e8f0'
-        }}>
-          <p><strong>Annat uppdrag</strong></p>
-          <p>Registrera arbetstid för uppdrag som inte är kopplat till en specifik match</p>
-        </div>
-      )}
+          Välj match:
+        </label>
+        {loadingMatches ? (
+          <div style={{ padding: '15px', textAlign: 'center', color: '#666' }}>
+            Laddar matcher...
+          </div>
+        ) : (
+          <select 
+            value={selectedMatchId} 
+            onChange={(e) => setSelectedMatchId(e.target.value)}
+            style={{
+              width: '100%',
+              padding: 'var(--space-lg)',
+              border: '2px solid var(--gray-200)',
+              borderRadius: 'var(--radius-lg)',
+              fontSize: '1rem',
+              background: 'white',
+              minHeight: 'var(--touch-target)'
+            }}
+          >
+            <option value="">Välj en match...</option>
+            {allMatches.map(m => (
+              <option key={m.id} value={m.id}>
+                {formatDate(m.date)} - {m.opponent} ({m.time || 'TBA'})
+              </option>
+            ))}
+            <option value="other">Annat uppdrag (ingen specifik match)</option>
+          </select>
+        )}
+      </div>
 
       {existingHours && (
         <div className="existing-notice">
@@ -330,58 +341,108 @@ function TimeRegistration({ match, guard }) {
 
       <form onSubmit={handleSubmit}>
         <div className="time-inputs">
-          <label>
-            Starttid:
-            <input
-              type="time"
-              value={startTime}
-              onChange={(e) => setStartTime(e.target.value)}
-              required
-            />
-          </label>
+          <div className="time-input-group">
+            <label>Starttid</label>
+            <div 
+              className="time-input-button" 
+              onClick={() => {
+                const input = document.getElementById('start-time')
+                if (input && input.showPicker) {
+                  input.showPicker()
+                } else {
+                  input.focus()
+                }
+              }}
+            >
+              {startTime || '00:00'}
+              <input
+                id="start-time"
+                type="time"
+                value={startTime}
+                onChange={(e) => setStartTime(e.target.value)}
+                required
+                style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+              />
+            </div>
+          </div>
 
-          <label>
-            Sluttid:
-            <input
-              type="time"
-              value={endTime}
-              onChange={(e) => setEndTime(e.target.value)}
-              required
-            />
-          </label>
+          <div className="time-input-group">
+            <label>Sluttid</label>
+            <div 
+              className="time-input-button" 
+              onClick={() => {
+                const input = document.getElementById('end-time')
+                if (input && input.showPicker) {
+                  input.showPicker()
+                } else {
+                  input.focus()
+                }
+              }}
+            >
+              {endTime || '00:00'}
+              <input
+                id="end-time"
+                type="time"
+                value={endTime}
+                onChange={(e) => setEndTime(e.target.value)}
+                required
+                style={{ position: 'absolute', opacity: 0, pointerEvents: 'none' }}
+              />
+            </div>
+          </div>
         </div>
 
-        <div className="calculated-hours">
-          <strong>Totalt: {calculatedHours} timmar</strong>
-          {isNonStandardHours && (
+        <div className="calculated-hours-display">
+          <div className="hours-badge">
+            {calculatedHours > 0 && !isNaN(calculatedHours) ? calculatedHours : '0'}
+            <div className="hours-label">timmar</div>
+          </div>
+          {isNonStandardHours && calculatedHours > 0 && !isNaN(calculatedHours) && (
             <span className="deviation">
               (avviker från standard 4.5h)
             </span>
           )}
+          {(calculatedHours <= 0 || isNaN(calculatedHours)) && startTime && endTime && (
+            <span className="deviation">
+              Kontrollera tiderna
+            </span>
+          )}
         </div>
 
-        <label>
-          Anteckningar (valfritt):
+        <div className="notes-section">
+          <label>Anteckningar (valfritt)</label>
           <textarea
             value={notes}
             onChange={(e) => setNotes(e.target.value)}
-            placeholder="T.ex. övertid, extratid, särskilda omständigheter..."
-            rows="3"
+            placeholder="T.ex. Övertid, paus, extratid..."
           />
-        </label>
+        </div>
 
-        <button 
-          type="submit" 
-          disabled={saving || !startTime || !endTime || calculatedHours <= 0 || (!selectedMatch && selectedMatchId !== 'other')}
-        >
-          {saving ? 'Sparar...' : (existingHours ? 'Uppdatera' : 'Spara arbetstid')}
-        </button>
-        
-        {calculatedHours <= 0 && startTime && endTime && (
-          <div style={{ color: 'red', textAlign: 'center', marginTop: '10px' }}>
-            Kontrollera att sluttid är efter starttid
-          </div>
-        )}
+        <div className="action-buttons">
+          <button 
+            type="button" 
+            className="btn-cancel"
+            onClick={() => {
+              if (onClose) {
+                onClose()
+              } else {
+                setStartTime('')
+                setEndTime('')
+                setNotes('')
+                setSelectedMatchId('')
+              }
+            }}
+          >
+            Avbryt
+          </button>
+          <button 
+            type="submit" 
+            className="btn-save"
+            disabled={saving || !startTime || !endTime || calculatedHours <= 0 || isNaN(calculatedHours) || (!selectedMatch && selectedMatchId !== 'other')}
+          >
+            {saving ? 'Sparar...' : `Spara ${calculatedHours > 0 && !isNaN(calculatedHours) ? calculatedHours : ''}h`}
+          </button>
+        </div>
       </form>
     </div>
   )

@@ -5,6 +5,12 @@ function MyHours({ guard }) {
   const [workHours, setWorkHours] = useState([])
   const [loading, setLoading] = useState(true)
 
+  // Formatera tid till HH:MM (ta bort sekunder)
+  const formatTime = (timeString) => {
+    if (!timeString) return ''
+    return timeString.split(':').slice(0, 2).join(':')
+  }
+
   useEffect(() => {
     fetchMyHours()
   }, [guard.id])
@@ -83,26 +89,18 @@ function MyHours({ guard }) {
       <h2>Dina arbetstider</h2>
       
       <div className="hours-summary">
-        <p><strong>Totalt denna säsong: {totalHours.toFixed(1)} timmar</strong></p>
+        <p>Totalt denna säsong: {totalHours.toFixed(1)} timmar</p>
         <p>Antal pass: {workHours.length}</p>
       </div>
 
       <div className="hours-list">
         <h3>Senaste registreringar</h3>
         {workHours.length === 0 ? (
-          <div style={{ textAlign: 'center', padding: '20px', color: '#666' }}>
+          <div className="no-hours-message">
             <p>Inga arbetstider registrerade än.</p>
             <button 
               onClick={fetchMyHours}
-              style={{ 
-                marginTop: '10px', 
-                padding: '8px 16px', 
-                background: '#ef4444', 
-                color: 'white', 
-                border: 'none', 
-                borderRadius: '6px',
-                cursor: 'pointer'
-              }}
+              className="refresh-button"
             >
               Uppdatera
             </button>
@@ -111,45 +109,40 @@ function MyHours({ guard }) {
           <div className="hours-table">
             {workHours.map(wh => (
               <div key={wh.id} className="hours-row">
-                <div className="hours-date">
-                  {wh.work_date ? new Date(wh.work_date).toLocaleDateString('sv-SE') : 'Inget datum'}
+                <div className="hours-row-header">
+                  <div className="hours-date">
+                    {wh.work_date ? new Date(wh.work_date).toLocaleDateString('sv-SE') : 'Inget datum'}
+                  </div>
+                  <div className="hours-total">
+                    {wh.total_hours ? parseFloat(wh.total_hours).toFixed(1) : '0'}h
+                  </div>
                 </div>
+                
                 <div className="hours-match">
                   {wh.matches?.opponent || 'Annat uppdrag'}
                   {wh.matches?.date && (
-                    <div style={{ fontSize: '0.8em', color: '#666' }}>
+                    <div style={{ fontSize: '0.8em', color: 'var(--gray-500)' }}>
                       Match: {new Date(wh.matches.date).toLocaleDateString('sv-SE')}
                     </div>
                   )}
                 </div>
+                
                 <div className="hours-time">
-                  {wh.start_time && wh.end_time ? `${wh.start_time} - ${wh.end_time}` : 'Tid ej angiven'}
+                  {wh.start_time && wh.end_time ? `${formatTime(wh.start_time)} - ${formatTime(wh.end_time)}` : 'Tid ej angiven'}
                 </div>
-                <div className="hours-total">
-                  <strong>{wh.total_hours ? parseFloat(wh.total_hours).toFixed(1) : '0'}h</strong>
-                  {wh.notes && (
-                    <div style={{ fontSize: '0.8em', color: '#666' }}>
-                      {wh.notes}
-                    </div>
-                  )}
-                </div>
+                
+                {wh.notes && (
+                  <div className="hours-notes">
+                    {wh.notes}
+                  </div>
+                )}
               </div>
             ))}
             <button 
               onClick={fetchMyHours}
-              style={{ 
-                width: '100%',
-                marginTop: '15px', 
-                padding: '10px', 
-                background: '#f1f5f9', 
-                color: '#334155', 
-                border: '1px solid #e2e8f0', 
-                borderRadius: '8px',
-                cursor: 'pointer',
-                fontSize: '14px'
-              }}
+              className="refresh-button"
             >
-              🔄 Uppdatera lista
+              Uppdatera lista
             </button>
           </div>
         )}
