@@ -1,15 +1,10 @@
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 
-function MyHours({ guard }) {
+function MyHours({ guard, onEditWorkHour }) {
   const [workHours, setWorkHours] = useState([])
   const [loading, setLoading] = useState(true)
-
-  // Formatera tid till HH:MM (ta bort sekunder)
-  const formatTime = (timeString) => {
-    if (!timeString) return ''
-    return timeString.split(':').slice(0, 2).join(':')
-  }
+  const [deleting, setDeleting] = useState(null)
 
   useEffect(() => {
     fetchMyHours()
@@ -18,8 +13,6 @@ function MyHours({ guard }) {
   const fetchMyHours = async () => {
     setLoading(true)
     try {
-      console.log('Hämtar arbetstider för guard:', guard.id) // Debug
-      
       const { data, error } = await supabase
         .from('work_hours')
         .select(`
@@ -34,18 +27,11 @@ function MyHours({ guard }) {
         .order('work_date', { ascending: false })
         .limit(20)
       
-      if (error) {
-        console.error('Supabase error:', error)
-        throw error
-      }
-      
-      console.log('Hämtade arbetstider:', data) // Debug
+      if (error) throw error
       setWorkHours(data || [])
     } catch (error) {
       console.error('Error fetching work hours:', error)
-      // Prova alternativ query om den första misslyckas
       try {
-        console.log('Försöker alternativ query...')
         const { data: altData, error: altError } = await supabase
           .from('work_hours')
           .select('*')
@@ -54,10 +40,9 @@ function MyHours({ guard }) {
           .limit(20)
         
         if (altError) throw altError
-        console.log('Alternativ query lyckades:', altData)
         setWorkHours(altData || [])
       } catch (altError) {
-        console.error('Alternativ query misslyckades också:', altError)
+        console.error('Alt query failed:', altError)
         setWorkHours([])
       }
     } finally {
@@ -65,17 +50,52 @@ function MyHours({ guard }) {
     }
   }
 
-  // Lägg till en refresh-funktion som kan anropas från parent
+  // Lyssna på uppdateringar
   useEffect(() => {
-    // Lyssna på window event för att uppdatera när nya timmar sparas
     const handleWorkHoursSaved = () => {
-      console.log('Work hours saved event detected, refreshing...')
       fetchMyHours()
     }
 
     window.addEventListener('workHoursSaved', handleWorkHoursSaved)
     return () => window.removeEventListener('workHoursSaved', handleWorkHoursSaved)
   }, [])
+
+  const handleEdit = (workHour) => {
+    if (onEditWorkHour) {
+      onEditWorkHour(workHour)
+    }
+  }
+
+  const handleDelete = async (workHourId) => {
+    const workHour = workHours.find(wh => wh.id === workHourId)
+    const opponent = workHour?.matches?.opponent || 'detta pass'
+    
+    const confirmed = window.confirm(
+      `Är du säker på att du vill ta bort arbetstiden för ${opponent}?`
+    )
+    
+    if (!confirmed) return
+
+    setDeleting(workHourId)
+    try {
+      const { error } = await supabase
+        .from('work_hours')
+        .delete()
+        .eq('id', workHourId)
+        .eq('personnel_id', guard.id)
+
+      if (error) throw error
+
+      setWorkHours(prev => prev.filter(wh => wh.id !== workHourId))
+      alert('Arbetstid borttagen!')
+      
+    } catch (error) {
+      console.error('Error deleting work hours:', error)
+      alert('Fel vid borttagning: ' + (error.message || 'Okänt fel'))
+    } finally {
+      setDeleting(null)
+    }
+  }
 
   const totalHours = workHours.reduce((sum, wh) => {
     const hours = wh.total_hours || 0
@@ -128,7 +148,10 @@ function MyHours({ guard }) {
                 </div>
                 
                 <div className="hours-time">
-                  {wh.start_time && wh.end_time ? `${formatTime(wh.start_time)} - ${formatTime(wh.end_time)}` : 'Tid ej angiven'}
+                  {wh.start_time && wh.end_time ? 
+                    `${wh.start_time.split(':').slice(0, 2).join(':')} - ${wh.end_time.split(':').slice(0, 2).join(':')}` : 
+                    'Tid ej angiven'
+                  }
                 </div>
                 
                 {wh.notes && (
@@ -136,6 +159,16 @@ function MyHours({ guard }) {
                     {wh.notes}
                   </div>
                 )}
+
+                {/* Delete button - snygg kryss-knapp */}
+                <button
+                  onClick={() => handleDelete(wh.id)}
+                  className="btn-delete-small"
+                  disabled={deleting === wh.id}
+                  title="Ta bort arbetstid"
+                >
+                  {deleting === wh.id ? '⏳' : '✕'}
+                </button>
               </div>
             ))}
             <button 

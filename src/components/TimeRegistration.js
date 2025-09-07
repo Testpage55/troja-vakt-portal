@@ -208,11 +208,11 @@ function TimeRegistration({ match, guard, onClose }) {
       }
 
       const workData = {
-        match_id: selectedMatchId === 'other' ? null : selectedMatch.id,
+        match_id: selectedMatchId === 'other' ? null : selectedMatch?.id,
         personnel_id: guard.id,
         start_time: startTime,
         end_time: endTime,
-        work_date: selectedMatch?.date || new Date().toISOString().split('T')[0],
+        work_date: selectedMatch?.date || existingHours?.work_date || new Date().toISOString().split('T')[0],
         notes: notes.trim()
       }
 

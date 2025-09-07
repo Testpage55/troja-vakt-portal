@@ -8,6 +8,7 @@ function Dashboard({ guard, onLogout }) {
   const [todaysMatch, setTodaysMatch] = useState(null)
   const [loading, setLoading] = useState(true)
   const [showTimeRegistration, setShowTimeRegistration] = useState(false)
+  const [editingWorkHour, setEditingWorkHour] = useState(null)
 
   useEffect(() => {
     fetchTodaysMatch()
@@ -37,6 +38,21 @@ function Dashboard({ guard, onLogout }) {
     }
   }
 
+  const handleNewRegistration = () => {
+    setEditingWorkHour(null)
+    setShowTimeRegistration(true)
+  }
+
+  const handleEditWorkHour = (workHour) => {
+    setEditingWorkHour(workHour)
+    setShowTimeRegistration(true)
+  }
+
+  const handleCloseModal = () => {
+    setShowTimeRegistration(false)
+    setEditingWorkHour(null)
+  }
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -64,7 +80,7 @@ function Dashboard({ guard, onLogout }) {
             Arbetstidsregistrering
           </h2>
           <button
-            onClick={() => setShowTimeRegistration(true)}
+            onClick={handleNewRegistration}
             style={{
               width: '100%',
               background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
@@ -79,11 +95,11 @@ function Dashboard({ guard, onLogout }) {
               minHeight: 'var(--touch-target-large)'
             }}
           >
-            📋 Registrera arbetstid
+            Registrera arbetstid
           </button>
         </div>
 
-        <MyHours guard={guard} />
+        <MyHours guard={guard} onEditWorkHour={handleEditWorkHour} />
       </main>
 
       {/* Time Registration Modal */}
@@ -110,7 +126,7 @@ function Dashboard({ guard, onLogout }) {
           }}>
             {/* Close Button */}
             <button
-              onClick={() => setShowTimeRegistration(false)}
+              onClick={handleCloseModal}
               style={{
                 position: 'absolute',
                 top: 'var(--space-lg)',
@@ -135,7 +151,8 @@ function Dashboard({ guard, onLogout }) {
             <TimeRegistration 
               match={todaysMatch} 
               guard={guard}
-              onClose={() => setShowTimeRegistration(false)}
+              editingWorkHour={editingWorkHour}
+              onClose={handleCloseModal}
             />
           </div>
         </div>

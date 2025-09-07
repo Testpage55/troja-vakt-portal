@@ -326,149 +326,63 @@ body {
   margin-bottom: var(--space-md);
 }
 
-/* Time Registration - Mobile Card Style */
-.time-registration {
-  background: white;
-  border-radius: var(--radius-2xl);
-  box-shadow: var(--shadow-lg);
-  overflow: hidden;
-}
-
-.time-registration h2 {
-  background: var(--primary);
-  color: white;
-  margin: 0;
-  padding: var(--space-xl);
-  text-align: center;
-  font-size: 1.25rem;
-  font-weight: 600;
-}
-
-/* Match Info Card */
-.match-info-card {
-  padding: var(--space-xl);
-  text-align: center;
-  border-bottom: 1px solid var(--gray-100);
-}
-
-.match-info-card h3 {
-  font-size: 1.5rem;
-  font-weight: 700;
-  color: var(--gray-800);
-  margin-bottom: var(--space-sm);
-}
-
-.match-info-card .match-details {
-  color: var(--gray-600);
-  font-size: 1rem;
-}
-
-/* Standard Hours Info */
-.standard-hours-info {
-  background: rgba(239, 68, 68, 0.1);
-  border: 1px solid rgba(239, 68, 68, 0.2);
-  border-radius: var(--radius-lg);
-  padding: var(--space-lg);
-  margin: var(--space-lg) var(--space-xl);
-  text-align: center;
-}
-
-.standard-hours-info h4 {
-  color: var(--primary);
-  font-size: 1rem;
-  font-weight: 600;
-  margin-bottom: var(--space-sm);
-}
-
-.standard-hours-info p {
-  color: var(--gray-600);
-  font-size: 0.9rem;
-  line-height: 1.4;
-}
-
-/* Time Inputs - Large Touch Friendly */
+/* Time Registration - Mobile First */
 .time-inputs {
   display: grid;
-  grid-template-columns: 1fr 1fr;
+  grid-template-columns: 1fr;
   gap: var(--space-lg);
-  padding: var(--space-xl);
-  border-bottom: 1px solid var(--gray-100);
+  margin: var(--space-lg) 0;
 }
 
-.time-input-group {
-  text-align: center;
-}
-
-.time-input-group label {
+.time-inputs label {
   display: block;
   font-weight: 500;
   color: var(--gray-700);
   font-size: 1rem;
-  margin-bottom: var(--space-sm);
 }
 
-.time-input-button {
+.time-inputs input,
+.time-registration textarea,
+.time-registration button {
   width: 100%;
-  padding: var(--space-xl);
+  padding: var(--space-lg);
   border: 2px solid var(--gray-200);
-  border-radius: var(--radius-xl);
-  font-size: 1.5rem;
-  font-weight: 600;
-  background: white;
-  color: var(--gray-800);
-  cursor: pointer;
+  border-radius: var(--radius-lg);
+  font-size: 1rem;
+  margin-top: var(--space-sm);
   transition: all 0.2s ease;
-  min-height: 80px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  position: relative;
+  background: white;
+  min-height: var(--touch-target);
 }
 
-.time-input-button:focus {
+.time-inputs input[type="time"] {
+  font-family: inherit;
+  font-size: 1.1rem;
+}
+
+.time-inputs input:focus,
+.time-registration textarea:focus {
   outline: none;
   border-color: var(--primary);
   box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
 }
 
-.time-input-button:active {
-  transform: scale(0.98);
+.time-registration textarea {
+  min-height: 100px;
+  resize: vertical;
 }
 
-/* Hidden actual input */
-.time-inputs input[type="time"] {
-  position: absolute;
-  opacity: 0;
-  pointer-events: none;
-}
-
-/* Calculated Hours - Large Display */
-.calculated-hours-display {
+.calculated-hours {
   text-align: center;
-  padding: var(--space-2xl);
-  border-bottom: 1px solid var(--gray-100);
-}
-
-.hours-badge {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 120px;
-  height: 120px;
-  background: linear-gradient(135deg, #10b981 0%, #059669 100%);
-  border-radius: 50%;
-  color: white;
-  font-size: 2rem;
-  font-weight: 700;
-  margin: 0 auto var(--space-md);
-  box-shadow: var(--shadow-lg);
-}
-
-.hours-label {
-  color: white;
-  font-size: 0.9rem;
-  font-weight: 500;
-  margin-top: var(--space-xs);
+  padding: var(--space-xl);
+  background: linear-gradient(135deg, var(--primary-light) 0%, rgba(239, 68, 68, 0.1) 100%);
+  border-radius: var(--radius-lg);
+  margin: var(--space-lg) 0;
+  font-size: 1.25rem;
+  font-weight: 600;
+  color: var(--primary-dark);
+  border: 2px solid rgba(239, 68, 68, 0.2);
+  line-height: 1.4;
 }
 
 .deviation {
@@ -479,113 +393,88 @@ body {
   margin-top: var(--space-sm);
 }
 
-/* Notes Section */
-.notes-section {
-  padding: var(--space-xl);
-  border-bottom: 1px solid var(--gray-100);
-}
-
-.notes-section label {
-  display: block;
-  font-weight: 500;
-  color: var(--gray-700);
-  font-size: 1rem;
-  margin-bottom: var(--space-sm);
-}
-
-.notes-section textarea {
-  width: 100%;
+.existing-notice {
+  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
   padding: var(--space-lg);
-  border: 2px solid var(--gray-200);
   border-radius: var(--radius-lg);
-  font-size: 1rem;
-  background: white;
-  min-height: 100px;
-  resize: vertical;
-  transition: all 0.2s ease;
+  margin-bottom: var(--space-lg);
+  color: #92400e;
+  border: 2px solid #fcd34d;
+  font-weight: 500;
+  text-align: center;
 }
 
-.notes-section textarea:focus {
-  outline: none;
-  border-color: var(--primary);
-  box-shadow: 0 0 0 3px rgba(239, 68, 68, 0.1);
-}
-
-/* Action Buttons */
-.action-buttons {
-  display: grid;
-  grid-template-columns: 1fr 2fr;
-  gap: var(--space-md);
-  padding: var(--space-xl);
-}
-
-.btn-cancel {
-  background: var(--gray-600);
-  color: white;
-  border: none;
-  border-radius: var(--radius-xl);
-  padding: var(--space-lg);
-  font-size: 1rem;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.2s ease;
-  min-height: var(--touch-target-large);
-}
-
-.btn-cancel:active {
-  transform: scale(0.98);
-  background: var(--gray-700);
-}
-
-.btn-save {
+.time-registration button {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: white;
   border: none;
-  border-radius: var(--radius-xl);
-  padding: var(--space-lg);
-  font-size: 1rem;
-  font-weight: 600;
   cursor: pointer;
+  font-weight: 600;
+  margin-top: var(--space-xl);
   transition: all 0.2s ease;
   min-height: var(--touch-target-large);
+  font-size: 1.1rem;
 }
 
-.btn-save:active:not(:disabled) {
+.time-registration button:active:not(:disabled) {
   transform: scale(0.98);
 }
 
-.btn-save:disabled {
+.time-registration button:disabled {
   background: var(--gray-300);
   cursor: not-allowed;
   transform: none;
 }
 
-.existing-notice {
-  background: linear-gradient(135deg, #fef3c7 0%, #fde68a 100%);
-  padding: var(--space-lg);
-  margin: var(--space-lg) var(--space-xl) 0;
-  border-radius: var(--radius-lg);
-  color: #92400e;
-  border: 2px solid #fcd34d;
-  font-weight: 500;
-  text-align: center;
-  font-size: 0.9rem;
+/* My Hours - Mobile Card Style */
+.my-hours {
+  background: rgba(255, 255, 255, 0.8);
+  backdrop-filter: blur(20px);
+  border-radius: var(--radius-xl);
+  box-shadow: var(--shadow-md);
+  border: 1px solid rgba(255, 255, 255, 0.2);
+  overflow: hidden;
 }
 
-/* My Hours - Mobile Optimized */
+.my-hours h2 {
+  background: var(--gray-700);
+  color: white;
+  margin: 0;
+  padding: var(--space-lg);
+  text-align: center;
+  font-size: 1.125rem;
+  font-weight: 600;
+}
+
 .hours-summary {
   background: linear-gradient(135deg, var(--accent) 0%, #059669 100%);
   color: white;
   padding: var(--space-xl);
-  border-radius: var(--radius-lg);
-  margin-bottom: var(--space-lg);
   text-align: center;
+  margin: 0;
 }
 
 .hours-summary p {
   margin: var(--space-sm) 0;
   font-size: 1rem;
   line-height: 1.4;
+}
+
+.hours-summary p:first-child {
+  font-size: 1.25rem;
+  font-weight: 700;
+}
+
+.hours-list {
+  padding: var(--space-lg);
+}
+
+.hours-list h3 {
+  color: var(--gray-700);
+  font-size: 1rem;
+  font-weight: 600;
+  margin-bottom: var(--space-lg);
+  text-align: center;
 }
 
 .hours-table {
@@ -595,15 +484,11 @@ body {
 }
 
 .hours-row {
-  display: grid;
-  grid-template-columns: 1fr;
-  gap: var(--space-sm);
-  padding: var(--space-lg);
-  background: linear-gradient(135deg, var(--gray-50) 0%, white 100%);
+  background: var(--gray-50);
   border-radius: var(--radius-lg);
+  padding: var(--space-lg);
   border: 2px solid var(--gray-100);
   transition: all 0.2s ease;
-  text-align: center;
 }
 
 .hours-row:active {
@@ -611,32 +496,131 @@ body {
   border-color: var(--primary-light);
 }
 
+.hours-row-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: var(--space-sm);
+}
+
 .hours-date {
   font-weight: 600;
   color: var(--gray-700);
   font-size: 1rem;
-  order: 1;
-}
-
-.hours-match {
-  color: var(--gray-600);
-  font-size: 0.9rem;
-  order: 2;
-}
-
-.hours-time {
-  font-family: 'JetBrains Mono', 'Fira Code', monospace;
-  font-size: 0.9rem;
-  color: var(--gray-600);
-  order: 3;
 }
 
 .hours-total {
   font-weight: 700;
   color: var(--primary);
   font-size: 1.25rem;
-  order: 4;
-  margin-top: var(--space-sm);
+}
+
+.hours-match {
+  color: var(--gray-600);
+  font-size: 0.9rem;
+  margin-bottom: var(--space-xs);
+}
+
+.hours-time {
+  font-family: 'JetBrains Mono', 'Fira Code', monospace;
+  font-size: 0.9rem;
+  color: var(--gray-600);
+}
+
+.hours-notes {
+  font-size: 0.8rem;
+  color: var(--gray-500);
+  font-style: italic;
+  margin-top: var(--space-xs);
+}
+
+.hours-actions {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: var(--space-sm);
+  margin-top: var(--space-md);
+  padding-top: var(--space-sm);
+  border-top: 1px solid var(--gray-200);
+}
+
+.btn-edit {
+  background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: var(--touch-target);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+}
+
+.btn-edit:active:not(:disabled) {
+  transform: scale(0.98);
+}
+
+.btn-edit:disabled {
+  background: var(--gray-300);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.btn-delete {
+  background: #dc2626;
+  color: white;
+  border: none;
+  border-radius: var(--radius-md);
+  padding: var(--space-sm) var(--space-md);
+  font-size: 0.875rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  min-height: var(--touch-target);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--space-xs);
+}
+
+.btn-delete:active:not(:disabled) {
+  transform: scale(0.98);
+  background: #b91c1c;
+}
+
+.btn-delete:disabled {
+  background: var(--gray-300);
+  cursor: not-allowed;
+  transform: none;
+}
+
+.no-hours-message {
+  text-align: center;
+  padding: var(--space-2xl);
+  color: var(--gray-600);
+}
+
+.refresh-button {
+  width: 100%;
+  margin-top: var(--space-lg);
+  padding: var(--space-md);
+  background: var(--gray-100);
+  color: var(--gray-700);
+  border: 2px solid var(--gray-200);
+  border-radius: var(--radius-lg);
+  cursor: pointer;
+  font-size: 0.9rem;
+  font-weight: 500;
+  transition: all 0.2s ease;
+}
+
+.refresh-button:active {
+  transform: scale(0.98);
+  background: var(--gray-200);
 }
 
 .loading {
