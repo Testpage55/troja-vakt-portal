@@ -1,4 +1,4 @@
-// KOMPLETT FIX - TimeRegistration.js - Ersätt HELA filen med denna kod
+// FIXAD TimeRegistration.js - Löser Foreign Key Constraint fel
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
@@ -49,6 +49,15 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
   const [saving, setSaving] = useState(false)
   const [existingHours, setExistingHours] = useState(null)
   const [loadingMatches, setLoadingMatches] = useState(true)
+
+  // DEBUG: Logga guard info vid mount
+  useEffect(() => {
+    console.log('TimeRegistration mounted with guard:', guard)
+    if (guard) {
+      console.log('Guard ID:', guard.id, 'Type:', typeof guard.id)
+      console.log('Guard Name:', guard.name)
+    }
+  }, [guard])
 
   useEffect(() => {
     fetchAllMatches()
@@ -147,15 +156,15 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
   }
 
   const checkExistingHours = async () => {
-    if (!selectedMatch) return
+    if (!selectedMatch || !guard?.id) return
     
     try {
       console.log('Kontrollerar befintliga timmar för match:', selectedMatch.id, 'guard:', guard.id)
       const { data, error } = await supabase
         .from('work_hours')
         .select('*')
-        .eq('match_id', selectedMatch.id)
-        .eq('personnel_id', guard.id)
+        .eq('match_id', parseInt(selectedMatch.id))
+        .eq('personnel_id', parseInt(guard.id))
         .maybeSingle()
       
       if (error && error.code !== 'PGRST116') {
@@ -214,7 +223,6 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
     return `${dateStr} (${dayName})`
   }
 
-  // FIXAD: Sparar utan 'registered_by' som inte finns i nya schemat
   const handleSubmit = async () => {
     if (!startTime || !endTime) {
       alert('Du måste ange både start- och sluttid')
@@ -225,23 +233,41 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
       alert('Du måste välja en match')
       return
     }
+
+    if (!guard || !guard.id) {
+      alert('Fel: Ingen vakt är inloggad')
+      console.error('Guard data saknas:', guard)
+      return
+    }
     
     setSaving(true)
 
     try {
-      // Skapa data-objekt utan kolumner som inte finns
+      // VIKTIGA FIXES för Foreign Key fel:
+      const matchId = parseInt(selectedMatch.id)
+      const personnelId = parseInt(guard.id)
+      
+      // DEBUG: Logga värden innan sparande
+      console.log('DEBUG - Sparar arbetstid med:')
+      console.log('Match ID:', matchId, 'Type:', typeof matchId)
+      console.log('Personnel ID:', personnelId, 'Type:', typeof personnelId)
+      console.log('Guard object:', guard)
+
+      // Verifiera att värden är giltiga
+      if (isNaN(matchId) || isNaN(personnelId)) {
+        throw new Error(`Ogiltiga ID-värden: match_id=${matchId}, personnel_id=${personnelId}`)
+      }
+
       const workData = {
-        match_id: selectedMatch.id,
-        personnel_id: guard.id,
+        match_id: matchId,
+        personnel_id: personnelId,  // ← VIKTIG FIX: parseInt för att säkerställa integer
         start_time: startTime,
         end_time: endTime,
         work_date: selectedMatch.date,
         notes: notes.trim() || null
-        // BORTTAGET: registered_by (finns inte i nya schemat)
-        // BORTTAGET: total_hours (beräknas automatiskt av databasen)
       }
 
-      console.log('Sparar arbetstid:', workData)
+      console.log('Final workData:', workData)
 
       let result
       if (existingHours || editingWorkHour) {
@@ -263,14 +289,14 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
       }
 
       if (result.error) {
-        console.error('Databas-fel:', result.error)
+        console.error('Supabase-fel:', result.error)
         throw result.error
       }
 
       console.log('Arbetstid sparad framgångsrikt:', result.data)
       alert('Arbetstid sparad!')
       
-      // Uppdatera andra komponenter
+      // Trigga event för att uppdatera andra komponenter
       window.dispatchEvent(new CustomEvent('workHoursUpdated'))
       
       if (onClose) {
@@ -278,7 +304,15 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
       }
     } catch (error) {
       console.error('Fel vid sparande:', error)
-      alert('Fel vid sparande: ' + (error.message || 'Okänt fel'))
+      
+      // Specifika felmeddelanden för olika typer av fel
+      if (error.message?.includes('foreign key constraint')) {
+        alert(`Databasfel: Kan inte hitta vakt med ID ${guard.id}. Kontrollera att du finns i personnel-tabellen.`)
+      } else if (error.message?.includes('violates check constraint')) {
+        alert('Fel: Ogiltig data. Kontrollera att alla fält är korrekt ifyllda.')
+      } else {
+        alert('Fel vid sparande: ' + (error.message || 'Okänt fel'))
+      }
     } finally {
       setSaving(false)
     }
@@ -297,9 +331,23 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
     )
   }
 
+  // Säkerhetscheck för guard
+  if (!guard || !guard.id) {
+    return (
+      <div className="time-registration-inner">
+        <div className="notice notice-error">
+          <h3>Fel: Ingen vakt inloggad</h3>
+          <p>Du måste logga in igen för att registrera arbetstid.</p>
+          <button onClick={onClose} className="btn btn-primary">
+            Stäng
+          </button>
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="time-registration-inner">
-      {/* Header */}
       <div style={{ textAlign: 'center', marginBottom: 'var(--space-xl)' }}>
         <h2 style={{ 
           margin: '0 0 var(--space-sm) 0',
@@ -314,11 +362,10 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
           color: 'var(--gray-600)',
           fontSize: '16px'
         }}>
-          Välkommen {guard.name}
+          Välkommen {guard.name} (ID: {guard.id})
         </p>
       </div>
 
-      {/* Info Card */}
       <div className="info-card">
         <div className="info-card-content">
           <h3>Smart Registrering</h3>
@@ -331,7 +378,6 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
         </div>
       </div>
       
-      {/* Match Selector */}
       <div className="form-group">
         <label className="form-label">
           Välj Match
@@ -351,7 +397,6 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
         </select>
       </div>
 
-      {/* Selected Match Display */}
       {selectedMatch && (
         <div style={{
           background: 'linear-gradient(135deg, var(--accent) 0%, var(--accent-dark) 100%)',
@@ -391,7 +436,6 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
 
       {selectedMatch && (
         <div>
-          {/* Time Inputs */}
           <div className="time-inputs">
             <div className="form-group">
               <label className="form-label">Starttid</label>
@@ -416,7 +460,6 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
             </div>
           </div>
 
-          {/* Hours Display */}
           <div className="calculated-hours">
             <h3>Totalt: {hours} timmar</h3>
             {hours != 4.5 && (
@@ -424,7 +467,6 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
             )}
           </div>
 
-          {/* Notes */}
           <div className="form-group">
             <label className="form-label">Anteckningar (valfritt)</label>
             <textarea
@@ -436,7 +478,6 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
             />
           </div>
 
-          {/* Submit Button */}
           <button
             onClick={handleSubmit}
             disabled={saving || !startTime || !endTime}

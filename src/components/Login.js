@@ -1,4 +1,4 @@
-// NYTT Login.js - Ersätt HELA innehållet i din Login.js med denna kod
+// HELT REN Login.js UTAN välkomsttext
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
@@ -17,14 +17,50 @@ function Login({ onLogin }) {
       const { data } = await supabase
         .from('personnel')
         .select('*')
-        .order('name')
       
-      setPersonnel(data || [])
+      // Custom sortering enligt önskemål
+      const sortedPersonnel = sortPersonnelByPriority(data || [])
+      setPersonnel(sortedPersonnel)
     } catch (error) {
       console.error('Error:', error)
     } finally {
       setLoading(false)
     }
+  }
+
+  const sortPersonnelByPriority = (personnelList) => {
+    // Prioriterade vakter i önskad ordning
+    const priorityOrder = ['Micke', 'Jocke', 'Gary', 'Tomas', 'Patrik', 'Jozsef']
+    
+    // Dela upp i prioriterade och övriga
+    const priorityPersonnel = []
+    const otherPersonnel = []
+    
+    // Först lägg till prioriterade i rätt ordning
+    priorityOrder.forEach(priorityName => {
+      const person = personnelList.find(p => 
+        p.name.toLowerCase().trim() === priorityName.toLowerCase().trim()
+      )
+      if (person) {
+        priorityPersonnel.push(person)
+      }
+    })
+    
+    // Sedan lägg till alla andra, sorterade alfabetiskt
+    personnelList.forEach(person => {
+      const isPriority = priorityOrder.some(priorityName => 
+        person.name.toLowerCase().trim() === priorityName.toLowerCase().trim()
+      )
+      if (!isPriority) {
+        otherPersonnel.push(person)
+      }
+    })
+    
+    // Sortera övriga alfabetiskt
+    otherPersonnel.sort((a, b) => a.name.localeCompare(b.name, 'sv-SE'))
+    
+    // Kombinera listorna
+    return [...priorityPersonnel, ...otherPersonnel]
   }
 
   const handleSubmit = (e) => {
@@ -51,29 +87,49 @@ function Login({ onLogin }) {
   return (
     <div className="login">
       <div className="login-card">
-        {/* Logo/Icon */}
+        {/* Troja Logo */}
         <div style={{
           textAlign: 'center',
-          marginBottom: 'var(--space-lg)',
-          fontSize: '48px',
-          color: 'var(--primary)',
-          fontWeight: '900'
-        }}>
-          TROJA
-        </div>
-        
-        <h1>Troja-Ljungby Vaktportal</h1>
-        
-        {/* Welcome text */}
-        <p style={{
-          textAlign: 'center',
-          color: 'var(--gray-600)',
           marginBottom: 'var(--space-xl)',
-          fontSize: '16px',
-          lineHeight: '1.6'
         }}>
-          Välkommen till den moderna vaktportalen. Logga in för att registrera arbetstider och hantera dina uppdrag.
-        </p>
+          <img 
+            src="/troja-logo.png" 
+            alt="Troja Ljungby" 
+            style={{
+              maxWidth: '200px',
+              height: 'auto',
+              filter: 'drop-shadow(0 4px 8px rgba(0, 0, 0, 0.1))',
+              marginBottom: 'var(--space-md)'
+            }}
+            onError={(e) => {
+              // Fallback till text om bilden inte hittas
+              e.target.style.display = 'none'
+              e.target.nextSibling.style.display = 'block'
+            }}
+          />
+          <div style={{
+            display: 'none',
+            fontSize: '48px',
+            color: 'var(--primary)',
+            fontWeight: '900',
+            marginBottom: 'var(--space-md)'
+          }}>
+            TROJA
+          </div>
+          
+          <h1 style={{
+            fontSize: '24px',
+            fontWeight: '700',
+            color: 'var(--primary)',
+            margin: 0,
+            background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
+            WebkitBackgroundClip: 'text',
+            WebkitTextFillColor: 'transparent',
+            backgroundClip: 'text'
+          }}>
+            Troja Vaktportal
+          </h1>
+        </div>
 
         <form onSubmit={handleSubmit}>
           <label>
@@ -99,7 +155,7 @@ function Login({ onLogin }) {
               }}
             >
               <option value="">Välj vakt...</option>
-              {personnel.map(person => (
+              {personnel.map((person, index) => (
                 <option key={person.id} value={person.id}>
                   {person.name}
                 </option>
@@ -120,16 +176,6 @@ function Login({ onLogin }) {
             Logga in
           </button>
         </form>
-
-        {/* Footer info */}
-        <div style={{
-          marginTop: 'var(--space-xl)',
-          textAlign: 'center',
-          fontSize: '14px',
-          color: 'var(--gray-500)'
-        }}>
-          <p>Säker inloggning • Modern design • Snabb registrering</p>
-        </div>
       </div>
     </div>
   )

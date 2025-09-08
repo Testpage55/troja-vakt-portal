@@ -1,4 +1,4 @@
-// NYTT Dashboard.js - Ersätt HELA innehållet i din Dashboard.js med denna kod
+// UPPDATERAD Dashboard.js med Kommande Matcher sektion
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
@@ -11,10 +11,26 @@ function Dashboard({ guard, onLogout }) {
   const [loading, setLoading] = useState(true)
   const [showTimeRegistration, setShowTimeRegistration] = useState(false)
   const [editingWorkHour, setEditingWorkHour] = useState(null)
+  const [upcomingMatches, setUpcomingMatches] = useState([])
+  const [loadingUpcoming, setLoadingUpcoming] = useState(true)
 
   useEffect(() => {
     fetchTodaysMatch()
+    fetchUpcomingMatches()
   }, [guard.id])
+
+  // Event listener för registreringsknapparna i TodaysMatch
+  useEffect(() => {
+    const handleOpenTimeRegistration = () => {
+      handleNewRegistration()
+    }
+    
+    window.addEventListener('openTimeRegistration', handleOpenTimeRegistration)
+    
+    return () => {
+      window.removeEventListener('openTimeRegistration', handleOpenTimeRegistration)
+    }
+  }, [])
 
   const fetchTodaysMatch = async () => {
     try {
@@ -38,6 +54,51 @@ function Dashboard({ guard, onLogout }) {
     } finally {
       setLoading(false)
     }
+  }
+
+  const fetchUpcomingMatches = async () => {
+    try {
+      const today = new Date().toISOString().split('T')[0]
+      
+      const { data } = await supabase
+        .from('matches')
+        .select('*')
+        .gt('date', today)
+        .order('date', { ascending: true })
+        .limit(5)
+      
+      setUpcomingMatches(data || [])
+    } catch (error) {
+      console.error('Error fetching upcoming matches:', error)
+      setUpcomingMatches([])
+    } finally {
+      setLoadingUpcoming(false)
+    }
+  }
+
+  const formatMatchDate = (dateString) => {
+    const date = new Date(dateString)
+    const today = new Date()
+    const tomorrow = new Date(today)
+    tomorrow.setDate(tomorrow.getDate() + 1)
+    
+    const dateStr = date.toLocaleDateString('sv-SE')
+    const dayName = date.toLocaleDateString('sv-SE', { weekday: 'long' })
+    
+    if (date.toDateString() === tomorrow.toDateString()) {
+      return `${dateStr} (IMORGON)`
+    }
+    
+    const weekStart = new Date(today)
+    weekStart.setDate(today.getDate() - today.getDay() + 1)
+    const weekEnd = new Date(weekStart)
+    weekEnd.setDate(weekStart.getDate() + 6)
+    
+    if (date >= weekStart && date <= weekEnd) {
+      return `${dateStr} (${dayName.toUpperCase()})`
+    }
+    
+    return `${dateStr} (${dayName})`
   }
 
   const handleNewRegistration = () => {
@@ -76,7 +137,7 @@ function Dashboard({ guard, onLogout }) {
       </header>
 
       <main className="dashboard-content">
-        <TodaysMatch match={todaysMatch} guard={guard} />
+        <TodaysMatch match={todaysMatch} guard={guard} onRegisterTime={handleNewRegistration} />
         
         {/* Quick Registration Card */}
         <div style={{ 
@@ -91,7 +152,6 @@ function Dashboard({ guard, onLogout }) {
           position: 'relative',
           overflow: 'hidden'
         }}>
-          {/* Background decoration */}
           <div style={{
             position: 'absolute',
             top: '-50%',
@@ -117,7 +177,7 @@ function Dashboard({ guard, onLogout }) {
               fontSize: '16px',
               lineHeight: '1.6'
             }}>
-              Registrera arbetstid för matcher snabbt och enkelt med vår smarta formulär
+              Registrera arbetstid för matcher snabbt och enkelt med vårt smarta formulär
             </p>
             <button
               onClick={handleNewRegistration}
@@ -132,14 +192,6 @@ function Dashboard({ guard, onLogout }) {
                 transition: 'all 0.3s ease',
                 transform: 'translateY(0)'
               }}
-              onMouseEnter={(e) => {
-                e.target.style.transform = 'translateY(-3px)'
-                e.target.style.boxShadow = '0 16px 36px rgba(239, 68, 68, 0.4)'
-              }}
-              onMouseLeave={(e) => {
-                e.target.style.transform = 'translateY(0)'
-                e.target.style.boxShadow = '0 12px 28px rgba(239, 68, 68, 0.3)'
-              }}
             >
               Registrera Arbetstid
             </button>
@@ -147,13 +199,130 @@ function Dashboard({ guard, onLogout }) {
         </div>
 
         <MyHours guard={guard} onEditWorkHour={handleEditWorkHour} />
+
+        {/* Kommande Matcher Sektion */}
+        <div style={{
+          background: 'var(--glass-bg)',
+          backdropFilter: 'blur(20px)',
+          padding: 'var(--space-xl)',
+          borderRadius: 'var(--radius-2xl)',
+          boxShadow: 'var(--glass-shadow)',
+          border: '1px solid var(--glass-border)'
+        }}>
+          <h2 style={{
+            marginBottom: 'var(--space-lg)',
+            fontSize: '20px',
+            fontWeight: '700',
+            color: 'var(--gray-800)'
+          }}>
+            Kommande Matcher
+          </h2>
+
+          {loadingUpcoming ? (
+            <div className="loading">
+              <div className="spinner"></div>
+              Laddar kommande matcher...
+            </div>
+          ) : upcomingMatches.length === 0 ? (
+            <div style={{
+              textAlign: 'center',
+              padding: 'var(--space-2xl)',
+              color: 'var(--gray-600)',
+              background: 'var(--gray-50)',
+              borderRadius: 'var(--radius-lg)',
+              border: '2px dashed var(--gray-300)'
+            }}>
+              <h3 style={{
+                margin: '0 0 var(--space-md) 0',
+                color: 'var(--gray-700)',
+                fontSize: '18px',
+                fontWeight: '600'
+              }}>
+                Inga kommande matcher
+              </h3>
+              <p style={{ margin: 0 }}>
+                Det finns inga schemalagda matcher för tillfället.
+              </p>
+            </div>
+          ) : (
+            <div style={{
+              display: 'flex',
+              flexDirection: 'column',
+              gap: 'var(--space-md)'
+            }}>
+              {upcomingMatches.map(match => (
+                <div
+                  key={match.id}
+                  style={{
+                    background: 'linear-gradient(135deg, var(--gray-50) 0%, white 100%)',
+                    padding: 'var(--space-lg)',
+                    borderRadius: 'var(--radius-lg)',
+                    border: '1px solid var(--gray-200)',
+                    display: 'grid',
+                    gridTemplateColumns: '1fr 2fr',
+                    gap: 'var(--space-md)',
+                    alignItems: 'center',
+                    transition: 'all 0.3s ease'
+                  }}
+                  onMouseEnter={(e) => {
+                    e.currentTarget.style.transform = 'translateY(-2px)'
+                    e.currentTarget.style.boxShadow = 'var(--shadow-md)'
+                  }}
+                  onMouseLeave={(e) => {
+                    e.currentTarget.style.transform = 'translateY(0)'
+                    e.currentTarget.style.boxShadow = 'none'
+                  }}
+                >
+                  <div>
+                    <div style={{
+                      fontSize: '14px',
+                      fontWeight: '600',
+                      color: 'var(--primary)',
+                      marginBottom: 'var(--space-xs)'
+                    }}>
+                      {formatMatchDate(match.date)}
+                    </div>
+                    <div style={{
+                      fontSize: '12px',
+                      color: 'var(--gray-500)'
+                    }}>
+                      {match.time || 'TBA'}
+                    </div>
+                  </div>
+                  
+                  <div>
+                    <div style={{
+                      fontWeight: '700',
+                      color: 'var(--gray-800)',
+                      fontSize: '16px',
+                      marginBottom: 'var(--space-xs)'
+                    }}>
+                      {match.opponent}
+                    </div>
+                    <div style={{
+                      fontSize: '13px',
+                      color: 'var(--gray-600)',
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: 'var(--space-xs)'
+                    }}>
+                      <span>{match.match_type === 'away' ? 'Bortamatch' : 'Hemmamatch'}</span>
+                      {match.match_type === 'away' && match.distance_miles && (
+                        <span> • {match.distance_miles} mil</span>
+                      )}
+                    </div>
+                  </div>
+                </div>
+              ))}
+            </div>
+          )}
+        </div>
       </main>
 
       {/* Time Registration Modal */}
       {showTimeRegistration && (
         <div className="time-registration-modal">
           <div className="time-registration-content">
-            {/* Close Button */}
             <button
               onClick={handleCloseModal}
               className="close-button"
