@@ -1,7 +1,7 @@
-/* NYTT App.css - Ersätt HELA innehållet i din App.css med denna kod */
+/* MODERNISERAD app.css */
 
 :root {
-  /* RÖTT TEMA - Uppdaterade färger */
+  /* FÄRG TEMA - Uppdaterade färger */
   --primary: #ef4444;
   --primary-dark: #dc2626;
   --secondary: #f87171;
@@ -21,30 +21,31 @@
   --gray-700: #2d3748;
   --gray-800: #1a202c;
   --gray-900: #171923;
-  
+
   --space-xs: 4px;
   --space-sm: 8px;
   --space-md: 16px;
   --space-lg: 24px;
   --space-xl: 32px;
   --space-2xl: 48px;
-  
+
   --radius-sm: 8px;
   --radius-md: 12px;
   --radius-lg: 16px;
   --radius-xl: 20px;
   --radius-2xl: 24px;
   --radius-3xl: 32px;
-  
+
   --shadow-sm: 0 2px 4px rgba(0, 0, 0, 0.05);
   --shadow-md: 0 4px 12px rgba(0, 0, 0, 0.08);
   --shadow-lg: 0 8px 24px rgba(0, 0, 0, 0.1);
   --shadow-xl: 0 16px 40px rgba(0, 0, 0, 0.12);
-  
+  --shadow-card: 0 4px 6px -1px rgba(0, 0, 0, 0.1), 0 2px 4px -2px rgba(0, 0, 0, 0.1);
+
   --glass-bg: rgba(255, 255, 255, 0.95);
   --glass-border: rgba(255, 255, 255, 0.2);
   --glass-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
-  
+
   --touch-target: 44px;
   --touch-target-large: 56px;
 }
@@ -53,6 +54,10 @@
   margin: 0;
   padding: 0;
   box-sizing: border-box;
+}
+
+html {
+  scroll-behavior: smooth;
 }
 
 body {
@@ -103,10 +108,7 @@ body {
 .login::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   opacity: 0.9;
 }
@@ -116,7 +118,7 @@ body {
   backdrop-filter: blur(20px);
   padding: var(--space-2xl);
   border-radius: var(--radius-3xl);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--shadow-card), var(--glass-shadow);
   max-width: 420px;
   width: 100%;
   border: 1px solid var(--glass-border);
@@ -127,8 +129,7 @@ body {
 
 .login-card h1 {
   text-align: center;
-  margin-bottom: var(--space-xl);
-  color: var(--primary);
+  margin-block-end: var(--space-xl);
   font-weight: 700;
   font-size: 28px;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
@@ -139,7 +140,7 @@ body {
 
 .login-card label {
   display: block;
-  margin-bottom: var(--space-lg);
+  margin-block-end: var(--space-lg);
   font-weight: 600;
   color: var(--gray-700);
   font-size: 16px;
@@ -152,8 +153,8 @@ body {
   border: 2px solid var(--gray-200);
   border-radius: var(--radius-lg);
   font-size: 16px;
-  margin-top: var(--space-sm);
-  transition: all 0.3s ease;
+  margin-block-start: var(--space-sm);
+  transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   outline: none;
   font-family: inherit;
 }
@@ -175,7 +176,7 @@ body {
   border: 2px solid transparent;
   cursor: pointer;
   font-weight: 600;
-  margin-top: var(--space-md);
+  margin-block-start: var(--space-md);
   min-height: var(--touch-target-large);
   box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
 }
@@ -195,7 +196,7 @@ body {
 /* Dashboard */
 .dashboard {
   max-width: 900px;
-  margin: 0 auto;
+  margin-inline: auto;
   padding: var(--space-lg);
   animation: fadeIn 0.8s ease-out;
 }
@@ -204,12 +205,12 @@ body {
   display: flex;
   justify-content: space-between;
   align-items: center;
-  margin-bottom: var(--space-xl);
+  margin-block-end: var(--space-xl);
   padding: var(--space-xl);
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
   border-radius: var(--radius-2xl);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--shadow-card), var(--glass-shadow);
   border: 1px solid var(--glass-border);
 }
 
@@ -231,7 +232,7 @@ body {
   border-radius: var(--radius-md);
   cursor: pointer;
   font-weight: 600;
-  transition: all 0.3s ease;
+  transition: background 0.2s ease-in-out, transform 0.2s ease-out, box-shadow 0.2s ease-out;
   min-height: var(--touch-target);
 }
 
@@ -244,10 +245,10 @@ body {
 .dashboard-content > div {
   background: var(--glass-bg);
   backdrop-filter: blur(20px);
-  margin-bottom: var(--space-lg);
+  margin-block-end: var(--space-lg);
   padding: var(--space-xl);
   border-radius: var(--radius-2xl);
-  box-shadow: var(--glass-shadow);
+  box-shadow: var(--shadow-card), var(--glass-shadow);
   border: 1px solid var(--glass-border);
   animation: slideIn 0.6s ease-out;
 }
@@ -256,7 +257,7 @@ body {
 .todays-match h2,
 .time-registration h2,
 .my-hours h2 {
-  margin-bottom: var(--space-lg);
+  margin-block-end: var(--space-lg);
   font-size: 20px;
   font-weight: 700;
   color: var(--gray-800);
@@ -277,7 +278,7 @@ body {
   position: relative;
   overflow: hidden;
   box-shadow: 0 16px 40px rgba(248, 113, 113, 0.3);
-  transition: transform 0.3s ease;
+  transition: transform 0.3s ease-out;
 }
 
 .match-card:hover {
@@ -287,17 +288,14 @@ body {
 .match-card::before {
   content: '';
   position: absolute;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: url("data:image/svg+xml,%3Csvg width='60' height='60' viewBox='0 0 60 60' xmlns='http://www.w3.org/2000/svg'%3E%3Cg fill='none' fill-rule='evenodd'%3E%3Cg fill='%23ffffff' fill-opacity='0.05'%3E%3Ccircle cx='30' cy='30' r='4'/%3E%3C/g%3E%3C/g%3E%3C/svg%3E");
   opacity: 0.3;
 }
 
 .match-card h3 {
   font-size: 26px;
-  margin-bottom: var(--space-md);
+  margin-block-end: var(--space-md);
   font-weight: 700;
   position: relative;
   z-index: 1;
@@ -330,10 +328,7 @@ body {
 /* Time Registration Modal Styles */
 .time-registration-modal {
   position: fixed;
-  top: 0;
-  left: 0;
-  right: 0;
-  bottom: 0;
+  inset: 0;
   background: rgba(0, 0, 0, 0.5);
   backdrop-filter: blur(4px);
   z-index: 1000;
@@ -347,7 +342,7 @@ body {
 .time-registration-content {
   width: 100%;
   max-width: 600px;
-  margin-top: var(--space-lg);
+  margin-block-start: var(--space-lg);
   position: relative;
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   border-radius: var(--radius-3xl);
@@ -365,8 +360,8 @@ body {
 
 .close-button {
   position: absolute;
-  top: var(--space-lg);
-  right: var(--space-lg);
+  inset-block-start: var(--space-lg);
+  inset-inline-end: var(--space-lg);
   background: rgba(255, 255, 255, 0.2);
   backdrop-filter: blur(10px);
   border: none;
@@ -390,12 +385,12 @@ body {
 
 /* Form Elements */
 .form-group {
-  margin-bottom: var(--space-lg);
+  margin-block-end: var(--space-lg);
 }
 
 .form-label {
   display: block;
-  margin-bottom: var(--space-sm);
+  margin-block-end: var(--space-sm);
   font-weight: 600;
   color: var(--gray-700);
   font-size: 16px;
@@ -433,7 +428,7 @@ body {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
   gap: var(--space-lg);
-  margin: var(--space-lg) 0;
+  margin-block: var(--space-lg);
 }
 
 /* Calculated Hours Display */
@@ -441,7 +436,7 @@ body {
   background: linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
-  margin: var(--space-lg) 0;
+  margin-block: var(--space-lg);
   text-align: center;
   position: relative;
   overflow: hidden;
@@ -450,8 +445,8 @@ body {
 .calculated-hours::before {
   content: '';
   position: absolute;
-  top: -20px;
-  right: -20px;
+  inset-block-start: -20px;
+  inset-inline-end: -20px;
   width: 100px;
   height: 100px;
   background: radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%);
@@ -471,7 +466,7 @@ body {
   color: var(--warning);
   font-weight: 600;
   font-size: 14px;
-  margin-top: var(--space-xs);
+  margin-block-start: var(--space-xs);
 }
 
 /* Info Cards */
@@ -479,7 +474,7 @@ body {
   background: linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%);
   border-radius: var(--radius-lg);
   padding: var(--space-lg);
-  margin-bottom: var(--space-xl);
+  margin-block-end: var(--space-xl);
   color: white;
   text-align: center;
   position: relative;
@@ -489,8 +484,8 @@ body {
 .info-card::before {
   content: '';
   position: absolute;
-  top: -50%;
-  right: -50%;
+  inset-block-start: -50%;
+  inset-inline-end: -50%;
   width: 200%;
   height: 200%;
   background: radial-gradient(circle, rgba(255,255,255,0.1) 0%, transparent 70%);
@@ -559,7 +554,7 @@ body {
   background: var(--gray-50);
   padding: var(--space-lg);
   border-radius: var(--radius-lg);
-  margin-bottom: var(--space-lg);
+  margin-block-end: var(--space-lg);
   border: 1px solid var(--gray-200);
 }
 
@@ -584,7 +579,7 @@ body {
   border-radius: var(--radius-lg);
   align-items: center;
   border: 1px solid var(--gray-200);
-  transition: all 0.3s ease;
+  transition: transform 0.2s ease-out, box-shadow 0.2s ease-out;
   position: relative;
 }
 
@@ -648,7 +643,7 @@ body {
 .notice {
   padding: var(--space-md);
   border-radius: var(--radius-lg);
-  margin-bottom: var(--space-lg);
+  margin-block-end: var(--space-lg);
   font-weight: 500;
 }
 
@@ -669,51 +664,46 @@ body {
   .dashboard {
     padding: var(--space-md);
   }
-  
+
   .dashboard-header {
     flex-direction: column;
     gap: var(--space-md);
     text-align: center;
     padding: var(--space-lg);
   }
-  
+
   .dashboard-content > div {
     padding: var(--space-lg);
   }
-  
+
   .time-inputs {
     grid-template-columns: 1fr;
   }
-  
+
   .hours-row {
     grid-template-columns: 1fr;
     text-align: center;
     gap: var(--space-sm);
   }
-  
+
   .login-card {
     padding: var(--space-xl) var(--space-lg);
     margin: var(--space-md);
   }
-  
+
   .match-card {
     padding: var(--space-lg);
   }
-  
+
   .time-registration-modal {
     padding: var(--space-md);
   }
-  
+
   .match-details {
     display: flex;
     flex-direction: column;
     gap: var(--space-sm);
   }
-}
-
-/* Smooth Scrolling */
-html {
-  scroll-behavior: smooth;
 }
 
 /* Focus Styles for Accessibility */
