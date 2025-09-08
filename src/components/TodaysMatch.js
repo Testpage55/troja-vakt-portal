@@ -1,28 +1,18 @@
-// TodaysMatch.js - Ersätt din befintliga TodaysMatch.js med denna kod
+// NYTT TodaysMatch.js - Ersätt HELA innehållet i din TodaysMatch.js med denna kod
 
 function TodaysMatch({ match }) {
   if (!match) {
     return (
       <div className="todays-match">
         <h2 style={{
-          display: 'flex',
-          alignItems: 'center',
-          gap: 'var(--space-sm)',
           marginBottom: 'var(--space-lg)',
           color: 'var(--gray-800)',
           fontSize: '20px',
           fontWeight: '700'
         }}>
-          📅 Dagens Match
+          Dagens Match
         </h2>
         <div className="no-match">
-          <div style={{
-            fontSize: '48px',
-            marginBottom: 'var(--space-md)',
-            opacity: 0.6
-          }}>
-            🏈
-          </div>
           <h3 style={{
             margin: '0 0 var(--space-md) 0',
             color: 'var(--gray-700)',
@@ -57,15 +47,12 @@ function TodaysMatch({ match }) {
   return (
     <div className="todays-match">
       <h2 style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--space-sm)',
         marginBottom: 'var(--space-lg)',
         color: 'var(--gray-800)',
         fontSize: '20px',
         fontWeight: '700'
       }}>
-        🔥 Dagens Match
+        Dagens Match
       </h2>
       
       <div className="match-card">
@@ -78,7 +65,7 @@ function TodaysMatch({ match }) {
           position: 'relative',
           zIndex: 1
         }}>
-          🆚 {match.opponent}
+          {match.opponent}
         </h3>
         
         {/* Match Details Grid */}
@@ -105,7 +92,6 @@ function TodaysMatch({ match }) {
               fontSize: '16px',
               fontWeight: '600'
             }}>
-              <span style={{ fontSize: '20px' }}>🕐</span>
               <span>{match.time || 'TBA'}</span>
             </div>
           </div>
@@ -126,9 +112,6 @@ function TodaysMatch({ match }) {
               fontSize: '16px',
               fontWeight: '600'
             }}>
-              <span style={{ fontSize: '20px' }}>
-                {match.match_type === 'away' ? '✈️' : '🏠'}
-              </span>
               <span>
                 {match.match_type === 'away' ? 'Bortamatch' : 'Hemmamatch'}
               </span>
@@ -152,7 +135,6 @@ function TodaysMatch({ match }) {
                 fontSize: '16px',
                 fontWeight: '600'
               }}>
-                <span style={{ fontSize: '20px' }}>📍</span>
                 <span>{match.distance_miles} mil</span>
               </div>
             </div>
@@ -176,7 +158,6 @@ function TodaysMatch({ match }) {
               fontWeight: '600',
               textAlign: 'center'
             }}>
-              <span style={{ fontSize: '20px' }}>📅</span>
               <span style={{ lineHeight: '1.4' }}>
                 {formatDate(match.date)}
               </span>
@@ -204,7 +185,6 @@ function TodaysMatch({ match }) {
             alignItems: 'center',
             gap: 'var(--space-xs)'
           }}>
-            <span>✅</span>
             <span>Du är tilldelad denna match</span>
           </div>
         </div>

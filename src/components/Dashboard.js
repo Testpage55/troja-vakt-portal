@@ -1,4 +1,4 @@
-// Dashboard.js - Ersätt din befintliga Dashboard.js med denna kod
+// NYTT Dashboard.js - Ersätt HELA innehållet i din Dashboard.js med denna kod
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
@@ -98,7 +98,7 @@ function Dashboard({ guard, onLogout }) {
             left: '-50%',
             width: '200%',
             height: '200%',
-            background: 'radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%)',
+            background: 'radial-gradient(circle, rgba(239, 68, 68, 0.05) 0%, transparent 70%)',
             transform: 'rotate(25deg)'
           }} />
           
@@ -107,13 +107,9 @@ function Dashboard({ guard, onLogout }) {
               marginBottom: 'var(--space-lg)', 
               color: 'var(--gray-800)',
               fontSize: '24px',
-              fontWeight: '700',
-              display: 'flex',
-              alignItems: 'center',
-              justifyContent: 'center',
-              gap: 'var(--space-sm)'
+              fontWeight: '700'
             }}>
-              ⚡ Snabb Registrering
+              Snabb Registrering
             </h2>
             <p style={{
               marginBottom: 'var(--space-xl)',
@@ -132,20 +128,20 @@ function Dashboard({ guard, onLogout }) {
                 borderRadius: 'var(--radius-xl)',
                 minHeight: 'var(--touch-target-large)',
                 background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
-                boxShadow: '0 12px 28px rgba(102, 126, 234, 0.3)',
+                boxShadow: '0 12px 28px rgba(239, 68, 68, 0.3)',
                 transition: 'all 0.3s ease',
                 transform: 'translateY(0)'
               }}
               onMouseEnter={(e) => {
                 e.target.style.transform = 'translateY(-3px)'
-                e.target.style.boxShadow = '0 16px 36px rgba(102, 126, 234, 0.4)'
+                e.target.style.boxShadow = '0 16px 36px rgba(239, 68, 68, 0.4)'
               }}
               onMouseLeave={(e) => {
                 e.target.style.transform = 'translateY(0)'
-                e.target.style.boxShadow = '0 12px 28px rgba(102, 126, 234, 0.3)'
+                e.target.style.boxShadow = '0 12px 28px rgba(239, 68, 68, 0.3)'
               }}
             >
-              📝 Registrera Arbetstid
+              Registrera Arbetstid
             </button>
           </div>
         </div>

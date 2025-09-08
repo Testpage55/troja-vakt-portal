@@ -1,4 +1,4 @@
-// TimeRegistration.js - Ersätt din befintliga TimeRegistration.js med denna kod
+// KOMPLETT FIX - TimeRegistration.js - Ersätt HELA filen med denna kod
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
@@ -49,7 +49,6 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
   const [saving, setSaving] = useState(false)
   const [existingHours, setExistingHours] = useState(null)
   const [loadingMatches, setLoadingMatches] = useState(true)
-  const [isAssigned, setIsAssigned] = useState(false)
 
   useEffect(() => {
     fetchAllMatches()
@@ -57,14 +56,12 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
 
   useEffect(() => {
     if (editingWorkHour) {
-      // Ladda befintlig arbetstid för redigering
       setSelectedMatchId(editingWorkHour.match_id?.toString() || '')
       setStartTime(editingWorkHour.start_time || '')
       setEndTime(editingWorkHour.end_time || '')
       setNotes(editingWorkHour.notes || '')
       setExistingHours(editingWorkHour)
       
-      // Hitta motsvarande match
       if (editingWorkHour.match_id) {
         const match = availableMatches.find(m => m.id === editingWorkHour.match_id)
         if (match) {
@@ -87,39 +84,29 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
     if (!editingWorkHour) {
       checkExistingHours()
     }
-    checkAssignment()
   }, [selectedMatch, guard, editingWorkHour])
 
   const fetchAllMatches = async () => {
     try {
-      const { data } = await supabase
+      console.log('Hämtar matcher...')
+      const { data, error } = await supabase
         .from('matches')
         .select('*')
         .order('date', { ascending: false })
       
+      if (error) {
+        console.error('Fel vid hämtning av matcher:', error)
+        throw error
+      }
+
+      console.log('Hämtade matcher:', data)
       const sortedMatches = sortMatchesByProximity(data || [])
       setAvailableMatches(sortedMatches)
     } catch (error) {
       console.error('Error fetching matches:', error)
+      alert('Kunde inte ladda matcher: ' + error.message)
     } finally {
       setLoadingMatches(false)
-    }
-  }
-
-  const checkAssignment = async () => {
-    if (!selectedMatch) return
-    
-    try {
-      const { data } = await supabase
-        .from('assignments')
-        .select('*')
-        .eq('match_id', selectedMatch.id)
-        .eq('personnel_id', guard.id)
-        .single()
-      
-      setIsAssigned(data?.is_working || false)
-    } catch (error) {
-      setIsAssigned(false)
     }
   }
 
@@ -157,27 +144,37 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
       setExistingHours(null)
       setNotes('')
     }
-    setIsAssigned(false)
   }
 
   const checkExistingHours = async () => {
     if (!selectedMatch) return
     
     try {
-      const { data } = await supabase
+      console.log('Kontrollerar befintliga timmar för match:', selectedMatch.id, 'guard:', guard.id)
+      const { data, error } = await supabase
         .from('work_hours')
         .select('*')
         .eq('match_id', selectedMatch.id)
         .eq('personnel_id', guard.id)
-        .single()
+        .maybeSingle()
+      
+      if (error && error.code !== 'PGRST116') {
+        console.error('Fel vid kontroll av befintliga timmar:', error)
+        throw error
+      }
       
       if (data) {
+        console.log('Hittade befintliga timmar:', data)
         setExistingHours(data)
         setStartTime(data.start_time)
         setEndTime(data.end_time)
         setNotes(data.notes || '')
+      } else {
+        console.log('Inga befintliga timmar hittades')
+        setExistingHours(null)
       }
     } catch (error) {
+      console.error('Error checking existing hours:', error)
       setExistingHours(null)
     }
   }
@@ -217,98 +214,70 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
     return `${dateStr} (${dayName})`
   }
 
-  const groupMatches = (matches) => {
-    const today = new Date()
-    const sevenDaysAgo = new Date(today)
-    const sevenDaysFromNow = new Date(today)
-    sevenDaysAgo.setDate(today.getDate() - 7)
-    sevenDaysFromNow.setDate(today.getDate() + 7)
-    
-    const nearMatches = []
-    const otherMatches = []
-    
-    matches.forEach(match => {
-      const matchDate = new Date(match.date)
-      if (matchDate >= sevenDaysAgo && matchDate <= sevenDaysFromNow) {
-        nearMatches.push(match)
-      } else {
-        otherMatches.push(match)
-      }
-    })
-    
-    return { nearMatches, otherMatches }
-  }
-
-  const ensureAssignment = async () => {
-    try {
-      const { data: existing } = await supabase
-        .from('assignments')
-        .select('*')
-        .eq('match_id', selectedMatch.id)
-        .eq('personnel_id', guard.id)
-        .single()
-
-      if (!existing) {
-        await supabase
-          .from('assignments')
-          .insert([{
-            match_id: selectedMatch.id,
-            personnel_id: guard.id,
-            is_working: true
-          }])
-      } else if (!existing.is_working) {
-        await supabase
-          .from('assignments')
-          .update({ is_working: true })
-          .eq('id', existing.id)
-      }
-    } catch (error) {
-      console.error('Error creating assignment:', error)
-    }
-  }
-
+  // FIXAD: Sparar utan 'registered_by' som inte finns i nya schemat
   const handleSubmit = async () => {
-    if (!startTime || !endTime) return
+    if (!startTime || !endTime) {
+      alert('Du måste ange både start- och sluttid')
+      return
+    }
+    
+    if (!selectedMatch) {
+      alert('Du måste välja en match')
+      return
+    }
     
     setSaving(true)
 
     try {
-      if (!editingWorkHour) {
-        await ensureAssignment()
-      }
-
+      // Skapa data-objekt utan kolumner som inte finns
       const workData = {
-        match_id: selectedMatch?.id,
+        match_id: selectedMatch.id,
         personnel_id: guard.id,
         start_time: startTime,
         end_time: endTime,
-        work_date: selectedMatch?.date || new Date().toISOString().split('T')[0],
-        notes: notes.trim(),
-        registered_by: 'self'
+        work_date: selectedMatch.date,
+        notes: notes.trim() || null
+        // BORTTAGET: registered_by (finns inte i nya schemat)
+        // BORTTAGET: total_hours (beräknas automatiskt av databasen)
       }
 
+      console.log('Sparar arbetstid:', workData)
+
+      let result
       if (existingHours || editingWorkHour) {
         const updateId = existingHours?.id || editingWorkHour?.id
-        await supabase
+        console.log('Uppdaterar befintlig arbetstid med ID:', updateId)
+        
+        result = await supabase
           .from('work_hours')
           .update(workData)
           .eq('id', updateId)
+          .select()
       } else {
-        await supabase
+        console.log('Skapar ny arbetstid')
+        
+        result = await supabase
           .from('work_hours')
           .insert([workData])
+          .select()
       }
 
+      if (result.error) {
+        console.error('Databas-fel:', result.error)
+        throw result.error
+      }
+
+      console.log('Arbetstid sparad framgångsrikt:', result.data)
       alert('Arbetstid sparad!')
       
-      // Trigger event för att uppdatera MyHours
+      // Uppdatera andra komponenter
       window.dispatchEvent(new CustomEvent('workHoursUpdated'))
       
       if (onClose) {
         onClose()
       }
     } catch (error) {
-      console.error('Error:', error)
+      console.error('Fel vid sparande:', error)
       alert('Fel vid sparande: ' + (error.message || 'Okänt fel'))
     } finally {
       setSaving(false)
@@ -336,13 +305,9 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
           margin: '0 0 var(--space-sm) 0',
           color: 'var(--gray-800)',
           fontSize: '28px',
-          fontWeight: '700',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 'var(--space-sm)'
+          fontWeight: '700'
         }}>
-          ⏰ {editingWorkHour ? 'Redigera' : 'Registrera'} Arbetstid
+          {editingWorkHour ? 'Redigera' : 'Registrera'} Arbetstid
         </h2>
         <p style={{ 
           margin: 0,
@@ -356,7 +321,7 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
       {/* Info Card */}
       <div className="info-card">
         <div className="info-card-content">
-          <h3>💡 Smart Registrering</h3>
+          <h3>Smart Registrering</h3>
           <p>
             {editingWorkHour 
               ? 'Redigera dina befintliga arbetstider här'
@@ -366,16 +331,10 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
         </div>
       </div>
       
-      {!editingWorkHour && (
-        <div className="notice notice-info">
-          <p>Du kan registrera arbetstid för vilken match som helst. Om du inte är förtilldelad kommer du automatiskt att läggas till som vakt.</p>
-        </div>
-      )}
-      
       {/* Match Selector */}
       <div className="form-group">
         <label className="form-label">
-          🏈 Välj Match
+          Välj Match
         </label>
         <select 
           value={selectedMatchId} 
@@ -384,34 +343,11 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
           disabled={!!editingWorkHour}
         >
           <option value="">Välj match...</option>
-          
-          {(() => {
-            const { nearMatches, otherMatches } = groupMatches(availableMatches)
-            
-            return (
-              <>
-                {nearMatches.length > 0 && (
-                  <optgroup label="🔥 AKTUELLA MATCHER (senaste/kommande veckan)">
-                    {nearMatches.map(match => (
-                      <option key={match.id} value={match.id}>
-                        {formatMatchDate(match.date)} - {match.opponent} ({match.time})
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-                
-                {otherMatches.length > 0 && (
-                  <optgroup label="📅 ÖVRIGA MATCHER">
-                    {otherMatches.map(match => (
-                      <option key={match.id} value={match.id}>
-                        {formatMatchDate(match.date)} - {match.opponent} ({match.time})
-                      </option>
-                    ))}
-                  </optgroup>
-                )}
-              </>
-            )
-          })()}
+          {availableMatches.map(match => (
+            <option key={match.id} value={match.id}>
+              {formatMatchDate(match.date)} - {match.opponent} ({match.time || 'TBA'})
+            </option>
+          ))}
         </select>
       </div>
 
@@ -426,17 +362,8 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
           textAlign: 'center',
           position: 'relative',
           overflow: 'hidden',
-          boxShadow: '0 16px 40px rgba(255, 107, 107, 0.3)'
+          boxShadow: '0 16px 40px rgba(248, 113, 113, 0.3)'
         }}>
-          <div style={{
-            position: 'absolute',
-            top: 0,
-            left: 0,
-            right: 0,
-            bottom: 0,
-            background: 'url("data:image/svg+xml,%3Csvg width="60" height="60" viewBox="0 0 60 60" xmlns="http://www.w3.org/2000/svg"%3E%3Cg fill="none" fill-rule="evenodd"%3E%3Cg fill="%23ffffff" fill-opacity="0.05"%3E%3Ccircle cx="30" cy="30" r="4"/%3E%3C/g%3E%3C/g%3E%3C/svg%3E")',
-            opacity: 0.3
-          }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
             <h3 style={{ margin: '0 0 var(--space-md) 0', fontSize: '24px', fontWeight: '700' }}>
               {selectedMatch.opponent}
@@ -448,54 +375,15 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
               gap: 'var(--space-md)',
               fontSize: '16px'
             }}>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                <span>📅</span>
-                <span>{formatMatchDate(selectedMatch.date)}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                <span>🕐</span>
-                <span>{selectedMatch.time}</span>
-              </div>
-              <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--space-sm)' }}>
-                <span>{selectedMatch.match_type === 'away' ? '✈️' : '🏠'}</span>
-                <span>{selectedMatch.match_type === 'away' ? 'Bortamatch' : 'Hemmamatch'}</span>
-              </div>
+              <div>{formatMatchDate(selectedMatch.date)}</div>
+              <div>{selectedMatch.time || 'TBA'}</div>
+              <div>{selectedMatch.match_type === 'away' ? 'Bortamatch' : 'Hemmamatch'}</div>
             </div>
-            
-            {!editingWorkHour && (
-              <div style={{ marginTop: 'var(--space-md)' }}>
-                {isAssigned ? (
-                  <span style={{
-                    display: 'inline-block',
-                    padding: 'var(--space-sm) var(--space-md)',
-                    borderRadius: 'var(--radius-xl)',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    background: 'rgba(34, 197, 94, 0.2)',
-                    color: '#15803d'
-                  }}>
-                    ✅ Du är tilldelad denna match
-                  </span>
-                ) : (
-                  <span style={{
-                    display: 'inline-block',
-                    padding: 'var(--space-sm) var(--space-md)',
-                    borderRadius: 'var(--radius-xl)',
-                    fontSize: '14px',
-                    fontWeight: '600',
-                    background: 'rgba(245, 158, 11, 0.2)',
-                    color: '#d97706'
-                  }}>
-                    ➕ Du kommer att läggas till som vakt
-                  </span>
-                )}
-              </div>
-            )}
           </div>
         </div>
       )}
 
-      {(existingHours || editingWorkHour) && !editingWorkHour && (
+      {existingHours && !editingWorkHour && (
         <div className="notice notice-warning">
           Arbetstid redan registrerad för denna match - du kan uppdatera den här.
         </div>
@@ -506,9 +394,7 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
           {/* Time Inputs */}
           <div className="time-inputs">
             <div className="form-group">
-              <label className="form-label">
-                🚀 Starttid
-              </label>
+              <label className="form-label">Starttid</label>
               <input
                 type="time"
                 value={startTime}
@@ -519,9 +405,7 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
             </div>
 
             <div className="form-group">
-              <label className="form-label">
-                🏁 Sluttid
-              </label>
+              <label className="form-label">Sluttid</label>
               <input
                 type="time"
                 value={endTime}
@@ -534,17 +418,15 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
 
           {/* Hours Display */}
           <div className="calculated-hours">
-            <h3>⏱️ Totalt: {hours} timmar</h3>
+            <h3>Totalt: {hours} timmar</h3>
             {hours != 4.5 && (
-              <p className="deviation">⚠️ Avviker från standard (4.5h)</p>
+              <p className="deviation">Avviker från standard (4.5h)</p>
             )}
           </div>
 
           {/* Notes */}
           <div className="form-group">
-            <label className="form-label">
-              📝 Anteckningar (valfritt)
-            </label>
+            <label className="form-label">Anteckningar (valfritt)</label>
             <textarea
               value={notes}
               onChange={(e) => setNotes(e.target.value)}
@@ -567,7 +449,7 @@ function TimeRegistration({ match: todaysMatch, guard, editingWorkHour, onClose 
               </>
             ) : (
               <>
-                💾 {editingWorkHour ? 'Uppdatera' : 'Spara'} Arbetstid
+                {editingWorkHour ? 'Uppdatera' : 'Spara'} Arbetstid
               </>
             )}
           </button>

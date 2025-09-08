@@ -1,4 +1,4 @@
-// MyHours.js - Ersätt din befintliga MyHours.js med denna kod
+// NYTT MyHours.js - Ersätt HELA innehållet i din MyHours.js med denna kod
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
@@ -135,15 +135,12 @@ function MyHours({ guard, onEditWorkHour }) {
   return (
     <div className="my-hours">
       <h2 style={{
-        display: 'flex',
-        alignItems: 'center',
-        gap: 'var(--space-sm)',
         marginBottom: 'var(--space-lg)',
         color: 'var(--gray-800)',
         fontSize: '20px',
         fontWeight: '700'
       }}>
-        📊 Dina Arbetstider
+        Dina Arbetstider
       </h2>
       
       {/* Summary Cards */}
@@ -173,7 +170,6 @@ function MyHours({ guard, onEditWorkHour }) {
             borderRadius: '50%'
           }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ fontSize: '36px', marginBottom: 'var(--space-sm)' }}>⏱️</div>
             <h3 style={{ 
               margin: '0 0 var(--space-xs) 0',
               fontSize: '28px',
@@ -201,7 +197,7 @@ function MyHours({ guard, onEditWorkHour }) {
           color: 'white',
           position: 'relative',
           overflow: 'hidden',
-          boxShadow: '0 8px 24px rgba(79, 172, 254, 0.3)'
+          boxShadow: '0 8px 24px rgba(248, 113, 113, 0.3)'
         }}>
           <div style={{
             position: 'absolute',
@@ -213,7 +209,6 @@ function MyHours({ guard, onEditWorkHour }) {
             borderRadius: '50%'
           }} />
           <div style={{ position: 'relative', zIndex: 1 }}>
-            <div style={{ fontSize: '36px', marginBottom: 'var(--space-sm)' }}>📈</div>
             <h3 style={{ 
               margin: '0 0 var(--space-xs) 0',
               fontSize: '28px',
@@ -279,9 +274,6 @@ function MyHours({ guard, onEditWorkHour }) {
 
         {workHours.length === 0 ? (
           <div className="no-match">
-            <div style={{ fontSize: '48px', marginBottom: 'var(--space-md)', opacity: 0.6 }}>
-              📝
-            </div>
             <h3 style={{
               margin: '0 0 var(--space-md) 0',
               color: 'var(--gray-700)',
@@ -302,7 +294,7 @@ function MyHours({ guard, onEditWorkHour }) {
               className="btn btn-primary"
               style={{ fontSize: '14px', padding: 'var(--space-sm) var(--space-md)' }}
             >
-              🔄 Uppdatera
+              Uppdatera
             </button>
           </div>
         ) : (
@@ -363,8 +355,7 @@ function MyHours({ guard, onEditWorkHour }) {
                       alignItems: 'center',
                       gap: 'var(--space-xs)'
                     }}>
-                      <span>{wh.matches.match_type === 'away' ? '✈️' : '🏠'}</span>
-                      <span>{wh.matches.match_type === 'away' ? 'Borta' : 'Hemma'}</span>
+                      <span>{wh.matches.match_type === 'away' ? 'Bortamatch' : 'Hemmamatch'}</span>
                     </div>
                   )}
                 </div>
@@ -404,7 +395,7 @@ function MyHours({ guard, onEditWorkHour }) {
                     fontSize: '14px',
                     fontWeight: '700',
                     minWidth: '60px',
-                    boxShadow: '0 4px 12px rgba(102, 126, 234, 0.2)'
+                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
                   }}>
                     {wh.total_hours ? parseFloat(wh.total_hours).toFixed(1) : '0'}h
                   </div>
@@ -419,8 +410,8 @@ function MyHours({ guard, onEditWorkHour }) {
                   <button
                     onClick={() => handleEdit(wh)}
                     style={{
-                      background: 'rgba(102, 126, 234, 0.1)',
-                      border: '1px solid rgba(102, 126, 234, 0.2)',
+                      background: 'rgba(239, 68, 68, 0.1)',
+                      border: '1px solid rgba(239, 68, 68, 0.2)',
                       color: 'var(--primary)',
                       borderRadius: '50%',
                       width: '32px',
@@ -438,13 +429,13 @@ function MyHours({ guard, onEditWorkHour }) {
                       e.target.style.transform = 'scale(1.1)'
                     }}
                     onMouseLeave={(e) => {
-                      e.target.style.background = 'rgba(102, 126, 234, 0.1)'
+                      e.target.style.background = 'rgba(239, 68, 68, 0.1)'
                       e.target.style.color = 'var(--primary)'
                       e.target.style.transform = 'scale(1)'
                     }}
                     title="Redigera arbetstid"
                   >
-                    ✏️
+                    ✎
                   </button>
 
                   {/* Delete Button */}
@@ -454,7 +445,7 @@ function MyHours({ guard, onEditWorkHour }) {
                     className="btn-delete-small"
                     title="Ta bort arbetstid"
                   >
-                    {deleting === wh.id ? '⏳' : '🗑️'}
+                    {deleting === wh.id ? '...' : '×'}
                   </button>
                 </div>
               </div>
@@ -490,7 +481,7 @@ function MyHours({ guard, onEditWorkHour }) {
                   e.target.style.transform = 'translateY(0)'
                 }}
               >
-                🔄 Uppdatera lista
+                Uppdatera lista
               </button>
             </div>
           </div>

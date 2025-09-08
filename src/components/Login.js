@@ -1,4 +1,4 @@
-// Login.js - Ersätt din befintliga Login.js med denna kod
+// NYTT Login.js - Ersätt HELA innehållet i din Login.js med denna kod
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
@@ -55,9 +55,11 @@ function Login({ onLogin }) {
         <div style={{
           textAlign: 'center',
           marginBottom: 'var(--space-lg)',
-          fontSize: '48px'
+          fontSize: '48px',
+          color: 'var(--primary)',
+          fontWeight: '900'
         }}>
-          🏈
+          TROJA
         </div>
         
         <h1>Troja-Ljungby Vaktportal</h1>
@@ -81,7 +83,7 @@ function Login({ onLogin }) {
               gap: 'var(--space-sm)',
               marginBottom: 'var(--space-sm)'
             }}>
-              👤 Välj ditt namn
+              Välj ditt namn
             </span>
             <select 
               value={selectedGuard} 
@@ -115,7 +117,7 @@ function Login({ onLogin }) {
               gap: 'var(--space-sm)'
             }}
           >
-            🚀 Logga in
+            Logga in
           </button>
         </form>
 

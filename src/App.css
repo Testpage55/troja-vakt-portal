@@ -1,12 +1,13 @@
-/* Modern App.css - Uppdatera din befintliga App.css med denna kod */
+/* NYTT App.css - Ersätt HELA innehållet i din App.css med denna kod */
 
 :root {
-  --primary: #667eea;
-  --primary-dark: #764ba2;
-  --secondary: #4facfe;
-  --secondary-dark: #00f2fe;
-  --accent: #ff6b6b;
-  --accent-dark: #ee5a24;
+  /* RÖTT TEMA - Uppdaterade färger */
+  --primary: #ef4444;
+  --primary-dark: #dc2626;
+  --secondary: #f87171;
+  --secondary-dark: #ef4444;
+  --accent: #fca5a5;
+  --accent-dark: #f87171;
   --success: #a8edea;
   --success-dark: #fed6e3;
   --warning: #fbbf24;
@@ -89,13 +90,6 @@ body {
   50% { opacity: 0.5; }
 }
 
-@keyframes bounce {
-  0%, 20%, 53%, 80%, 100% { transform: translate3d(0,0,0); }
-  40%, 43% { transform: translate3d(0, -8px, 0); }
-  70% { transform: translate3d(0, -4px, 0); }
-  90% { transform: translate3d(0, -2px, 0); }
-}
-
 /* Login */
 .login {
   display: flex;
@@ -172,7 +166,7 @@ body {
 
 .login-card select:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
 }
 
 .login-card button {
@@ -183,12 +177,12 @@ body {
   font-weight: 600;
   margin-top: var(--space-md);
   min-height: var(--touch-target-large);
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
 }
 
 .login-card button:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 12px 28px rgba(239, 68, 68, 0.4);
 }
 
 .login-card button:disabled {
@@ -266,9 +260,6 @@ body {
   font-size: 20px;
   font-weight: 700;
   color: var(--gray-800);
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
 }
 
 /* Today's Match */
@@ -285,7 +276,7 @@ body {
   text-align: center;
   position: relative;
   overflow: hidden;
-  box-shadow: 0 16px 40px rgba(255, 107, 107, 0.3);
+  box-shadow: 0 16px 40px rgba(248, 113, 113, 0.3);
   transition: transform 0.3s ease;
 }
 
@@ -408,9 +399,6 @@ body {
   font-weight: 600;
   color: var(--gray-700);
   font-size: 16px;
-  display: flex;
-  align-items: center;
-  gap: var(--space-sm);
 }
 
 .form-input,
@@ -432,7 +420,7 @@ body {
 .form-select:focus,
 .form-textarea:focus {
   border-color: var(--primary);
-  box-shadow: 0 0 0 4px rgba(102, 126, 234, 0.1);
+  box-shadow: 0 0 0 4px rgba(239, 68, 68, 0.1);
 }
 
 .form-textarea {
@@ -547,12 +535,12 @@ body {
 .btn-primary {
   background: linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%);
   color: white;
-  box-shadow: 0 8px 20px rgba(102, 126, 234, 0.3);
+  box-shadow: 0 8px 20px rgba(239, 68, 68, 0.3);
 }
 
 .btn-primary:hover:not(:disabled) {
   transform: translateY(-2px);
-  box-shadow: 0 12px 28px rgba(102, 126, 234, 0.4);
+  box-shadow: 0 12px 28px rgba(239, 68, 68, 0.4);
 }
 
 .btn-primary:disabled {
@@ -589,7 +577,7 @@ body {
 
 .hours-row {
   display: grid;
-  grid-template-columns: 1fr 2fr 1.5fr auto;
+  grid-template-columns: 1fr 2fr 1.5fr auto auto;
   gap: var(--space-md);
   padding: var(--space-lg);
   background: var(--gray-50);
@@ -613,9 +601,9 @@ body {
 }
 
 .btn-delete-small {
-  background: rgba(255, 107, 107, 0.1);
-  border: 1px solid rgba(255, 107, 107, 0.2);
-  color: var(--accent);
+  background: rgba(239, 68, 68, 0.1);
+  border: 1px solid rgba(239, 68, 68, 0.2);
+  color: var(--primary);
   border-radius: 50%;
   width: 32px;
   height: 32px;
@@ -628,7 +616,7 @@ body {
 }
 
 .btn-delete-small:hover:not(:disabled) {
-  background: var(--accent);
+  background: var(--primary);
   color: white;
   transform: scale(1.1);
 }
