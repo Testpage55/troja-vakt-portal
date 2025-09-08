@@ -1,3 +1,5 @@
+// Dashboard.js - Ersätt din befintliga Dashboard.js med denna kod
+
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 import TodaysMatch from './TodaysMatch'
@@ -53,6 +55,17 @@ function Dashboard({ guard, onLogout }) {
     setEditingWorkHour(null)
   }
 
+  if (loading) {
+    return (
+      <div className="dashboard">
+        <div className="loading">
+          <div className="spinner"></div>
+          Laddar dashboard...
+        </div>
+      </div>
+    )
+  }
+
   return (
     <div className="dashboard">
       <header className="dashboard-header">
@@ -65,38 +78,76 @@ function Dashboard({ guard, onLogout }) {
       <main className="dashboard-content">
         <TodaysMatch match={todaysMatch} guard={guard} />
         
-        {/* Register Time Button */}
+        {/* Quick Registration Card */}
         <div style={{ 
-          background: 'rgba(255, 255, 255, 0.8)',
+          background: 'var(--glass-bg)',
           backdropFilter: 'blur(20px)',
           marginBottom: 'var(--space-xl)',
           padding: 'var(--space-xl)',
-          borderRadius: 'var(--radius-xl)',
-          boxShadow: 'var(--shadow-md)',
-          border: '1px solid rgba(255, 255, 255, 0.2)',
-          textAlign: 'center'
+          borderRadius: 'var(--radius-2xl)',
+          boxShadow: 'var(--glass-shadow)',
+          border: '1px solid var(--glass-border)',
+          textAlign: 'center',
+          position: 'relative',
+          overflow: 'hidden'
         }}>
-          <h2 style={{ marginBottom: 'var(--space-lg)', color: 'var(--gray-800)' }}>
-            Arbetstidsregistrering
-          </h2>
-          <button
-            onClick={handleNewRegistration}
-            style={{
-              width: '100%',
-              background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
-              color: 'white',
-              border: 'none',
-              borderRadius: 'var(--radius-xl)',
-              padding: 'var(--space-lg)',
-              fontSize: '1.1rem',
-              fontWeight: '600',
-              cursor: 'pointer',
-              transition: 'all 0.2s ease',
-              minHeight: 'var(--touch-target-large)'
-            }}
-          >
-            Registrera arbetstid
-          </button>
+          {/* Background decoration */}
+          <div style={{
+            position: 'absolute',
+            top: '-50%',
+            left: '-50%',
+            width: '200%',
+            height: '200%',
+            background: 'radial-gradient(circle, rgba(102, 126, 234, 0.05) 0%, transparent 70%)',
+            transform: 'rotate(25deg)'
+          }} />
+          
+          <div style={{ position: 'relative', zIndex: 1 }}>
+            <h2 style={{ 
+              marginBottom: 'var(--space-lg)', 
+              color: 'var(--gray-800)',
+              fontSize: '24px',
+              fontWeight: '700',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              gap: 'var(--space-sm)'
+            }}>
+              ⚡ Snabb Registrering
+            </h2>
+            <p style={{
+              marginBottom: 'var(--space-xl)',
+              color: 'var(--gray-600)',
+              fontSize: '16px',
+              lineHeight: '1.6'
+            }}>
+              Registrera arbetstid för matcher snabbt och enkelt med vår smarta formulär
+            </p>
+            <button
+              onClick={handleNewRegistration}
+              className="btn btn-primary"
+              style={{
+                fontSize: '18px',
+                padding: 'var(--space-lg) var(--space-2xl)',
+                borderRadius: 'var(--radius-xl)',
+                minHeight: 'var(--touch-target-large)',
+                background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
+                boxShadow: '0 12px 28px rgba(102, 126, 234, 0.3)',
+                transition: 'all 0.3s ease',
+                transform: 'translateY(0)'
+              }}
+              onMouseEnter={(e) => {
+                e.target.style.transform = 'translateY(-3px)'
+                e.target.style.boxShadow = '0 16px 36px rgba(102, 126, 234, 0.4)'
+              }}
+              onMouseLeave={(e) => {
+                e.target.style.transform = 'translateY(0)'
+                e.target.style.boxShadow = '0 12px 28px rgba(102, 126, 234, 0.3)'
+              }}
+            >
+              📝 Registrera Arbetstid
+            </button>
+          </div>
         </div>
 
         <MyHours guard={guard} onEditWorkHour={handleEditWorkHour} />
@@ -104,46 +155,13 @@ function Dashboard({ guard, onLogout }) {
 
       {/* Time Registration Modal */}
       {showTimeRegistration && (
-        <div style={{
-          position: 'fixed',
-          top: 0,
-          left: 0,
-          right: 0,
-          bottom: 0,
-          background: 'rgba(0, 0, 0, 0.5)',
-          zIndex: 1000,
-          display: 'flex',
-          alignItems: 'flex-start',
-          justifyContent: 'center',
-          padding: 'var(--space-md)',
-          overflowY: 'auto'
-        }}>
-          <div style={{
-            width: '100%',
-            maxWidth: '500px',
-            marginTop: 'var(--space-lg)',
-            position: 'relative'
-          }}>
+        <div className="time-registration-modal">
+          <div className="time-registration-content">
             {/* Close Button */}
             <button
               onClick={handleCloseModal}
-              style={{
-                position: 'absolute',
-                top: 'var(--space-lg)',
-                right: 'var(--space-lg)',
-                background: 'rgba(255, 255, 255, 0.2)',
-                border: 'none',
-                borderRadius: '50%',
-                width: '40px',
-                height: '40px',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                cursor: 'pointer',
-                color: 'white',
-                fontSize: '1.5rem',
-                zIndex: 1001
-              }}
+              className="close-button"
+              title="Stäng"
             >
               ×
             </button>
