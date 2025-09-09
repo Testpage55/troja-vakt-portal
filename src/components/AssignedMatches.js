@@ -1,10 +1,13 @@
 // 📋 FILNAMN: src/components/AssignedMatches.js
-// 📄 ÅTGÄRD: ERSÄTT din befintliga AssignedMatches.js med denna ENKLA version
+// 📄 ÅTGÄRD: ERSÄTT din befintliga AssignedMatches.js med denna version
 
 import { useState } from 'react'
+import MatchPersonnelModal from './MatchPersonnelModal'
 
 function AssignedMatches({ assignments, onEditTimes }) {
   const [showAll, setShowAll] = useState(false)
+  const [selectedMatch, setSelectedMatch] = useState(null)
+  const [showPersonnelModal, setShowPersonnelModal] = useState(false)
 
   const formatTime = (timeString) => {
     if (!timeString) return 'N/A'
@@ -72,6 +75,16 @@ function AssignedMatches({ assignments, onEditTimes }) {
         priority: 1
       }
     }
+  }
+
+  const handleMatchClick = (match) => {
+    setSelectedMatch(match)
+    setShowPersonnelModal(true)
+  }
+
+  const handleCloseModal = () => {
+    setShowPersonnelModal(false)
+    setSelectedMatch(null)
   }
 
   // Filtrera endast kommande matcher
@@ -181,29 +194,31 @@ function AssignedMatches({ assignments, onEditTimes }) {
                     {/* Match Info */}
                     <div>
                       <div style={{
-                        display: 'flex',
-                        alignItems: 'center',
-                        gap: '12px',
                         marginBottom: '8px'
                       }}>
-                        <h3 style={{ 
-                          margin: 0, 
-                          fontSize: '18px', 
-                          fontWeight: '700',
-                          color: '#1f2937'
-                        }}>
-                          {assignment.match?.opponent || 'Okänd motståndare'}
+                        <h3 
+                          onClick={() => handleMatchClick(assignment.match)}
+                          style={{ 
+                            margin: 0, 
+                            fontSize: '18px', 
+                            fontWeight: '700',
+                            color: '#ef4444',
+                            cursor: 'pointer',
+                            transition: 'all 0.3s ease',
+                            textDecoration: 'underline',
+                            textDecorationColor: 'transparent'
+                          }}
+                          onMouseEnter={(e) => {
+                            e.target.style.color = '#dc2626'
+                            e.target.style.textDecorationColor = '#dc2626'
+                          }}
+                          onMouseLeave={(e) => {
+                            e.target.style.color = '#ef4444'
+                            e.target.style.textDecorationColor = 'transparent'
+                          }}
+                        >
+                          IF Troja-Ljungby - {assignment.match?.opponent || 'Okänd motståndare'} 👥
                         </h3>
-                        <span style={{
-                          background: status.bg,
-                          color: status.color,
-                          padding: '4px 12px',
-                          borderRadius: '20px',
-                          fontSize: '12px',
-                          fontWeight: '600'
-                        }}>
-                          {status.text}
-                        </span>
                       </div>
                       
                       <div style={{ 
@@ -300,6 +315,14 @@ function AssignedMatches({ assignments, onEditTimes }) {
             </div>
           )}
         </div>
+      )}
+
+      {/* Personnel Modal */}
+      {showPersonnelModal && selectedMatch && (
+        <MatchPersonnelModal
+          match={selectedMatch}
+          onClose={handleCloseModal}
+        />
       )}
     </div>
   )
