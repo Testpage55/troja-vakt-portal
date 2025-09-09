@@ -1,5 +1,5 @@
-// 📁 FILNAMN: src/components/TimeEditor.js
-// ➕ ÅTGÄRD: SKAPA ny fil med detta innehåll
+// 📱 FILNAMN: src/components/TimeEditor.js
+// 📄 ÅTGÄRD: ERSÄTT din befintliga TimeEditor.js med denna MOBILANPASSADE version
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
@@ -50,6 +50,21 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
   })
   const [saving, setSaving] = useState(false)
 
+  // Detektera skärmstorlek
+  const isMobile = window.innerWidth <= 768
+  const isSmallMobile = window.innerWidth <= 480
+
+  useEffect(() => {
+    // Förhindra scrollning i bakgrunden på mobil
+    if (isMobile) {
+      document.body.style.overflow = 'hidden'
+    }
+    
+    return () => {
+      document.body.style.overflow = 'unset'
+    }
+  }, [isMobile])
+
   useEffect(() => {
     // Sätt initiala värden
     if (assignment.hasWorkHours && assignment.workHours) {
@@ -86,6 +101,15 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
   const formatDate = (dateString) => {
     if (!dateString) return 'Inget datum'
     const date = new Date(dateString)
+    
+    if (isMobile) {
+      return date.toLocaleDateString('sv-SE', { 
+        weekday: 'long', 
+        day: 'numeric', 
+        month: 'long'
+      })
+    }
+    
     return date.toLocaleDateString('sv-SE', { 
       weekday: 'long', 
       year: 'numeric', 
@@ -181,41 +205,43 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
       background: 'rgba(0, 0, 0, 0.5)',
       backdropFilter: 'blur(4px)',
       display: 'flex',
-      alignItems: 'center',
+      alignItems: isMobile ? 'stretch' : 'center',
       justifyContent: 'center',
       zIndex: 1000,
-      padding: '24px'
+      padding: isMobile ? '0' : '24px'
     }}>
       <div style={{
         background: 'white',
-        borderRadius: '24px',
-        padding: '48px',
-        maxWidth: '600px',
+        borderRadius: isMobile ? '0' : '24px',
+        padding: isMobile ? '20px' : '48px',
+        maxWidth: isMobile ? '100%' : '600px',
         width: '100%',
-        maxHeight: '90vh',
+        height: isMobile ? '100vh' : 'auto',
+        maxHeight: isMobile ? '100vh' : '90vh',
         overflow: 'auto',
         position: 'relative',
-        boxShadow: '0 20px 40px rgba(0, 0, 0, 0.15)'
+        boxShadow: isMobile ? 'none' : '0 20px 40px rgba(0, 0, 0, 0.15)'
       }}>
-        {/* Close button */}
+        {/* Close button - MOBILANPASSAD */}
         <button
           onClick={onClose}
           style={{
             position: 'absolute',
-            top: '24px',
-            right: '24px',
+            top: isMobile ? '16px' : '24px',
+            right: isMobile ? '16px' : '24px',
             background: '#f1f5f9',
             border: 'none',
             borderRadius: '50%',
-            width: '40px',
-            height: '40px',
+            width: isMobile ? '44px' : '40px',
+            height: isMobile ? '44px' : '40px',
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
             cursor: 'pointer',
-            fontSize: '20px',
+            fontSize: isMobile ? '24px' : '20px',
             color: '#6b7280',
-            transition: 'all 0.3s ease'
+            transition: 'all 0.3s ease',
+            zIndex: 1001
           }}
           onMouseEnter={(e) => {
             e.target.style.background = '#e2e8f0'
@@ -223,62 +249,87 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
           onMouseLeave={(e) => {
             e.target.style.background = '#f1f5f9'
           }}
+          onTouchStart={(e) => {
+            e.target.style.transform = 'scale(0.95)'
+          }}
+          onTouchEnd={(e) => {
+            e.target.style.transform = 'scale(1)'
+          }}
         >
           ×
         </button>
 
-        {/* Header */}
-        <div style={{ marginBottom: '32px' }}>
+        {/* Header - MOBILANPASSAD */}
+        <div style={{ 
+          marginBottom: isMobile ? '24px' : '32px',
+          paddingTop: isMobile ? '40px' : '0' // Plats för close-button
+        }}>
           <h3 style={{ 
             margin: '0 0 8px 0', 
-            fontSize: '24px', 
+            fontSize: isMobile ? '22px' : '24px', 
             fontWeight: '700',
-            color: '#1f2937'
+            color: '#1f2937',
+            lineHeight: '1.3'
           }}>
             {assignment.hasWorkHours ? 'Ändra arbetstider' : 'Sätt arbetstider'}
           </h3>
           <p style={{
             margin: 0,
             color: '#6b7280',
-            fontSize: '16px'
+            fontSize: isMobile ? '15px' : '16px',
+            lineHeight: '1.5'
           }}>
             {assignment.hasWorkHours ? 'Uppdatera dina arbetstider för matchen' : 'Välj arbetstider för din tilldelade match'}
           </p>
         </div>
         
-        {/* Match Info Card */}
+        {/* Match Info Card - MOBILANPASSAD */}
         <div style={{
           background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
           color: 'white',
-          padding: '20px',
-          borderRadius: '16px',
-          marginBottom: '32px'
+          padding: isMobile ? '16px' : '20px',
+          borderRadius: isMobile ? '12px' : '16px',
+          marginBottom: isMobile ? '24px' : '32px'
         }}>
-          <div style={{ fontWeight: '700', fontSize: '18px', marginBottom: '8px' }}>
+          <div style={{ 
+            fontWeight: '700', 
+            fontSize: isMobile ? '16px' : '18px', 
+            marginBottom: '8px',
+            lineHeight: '1.3'
+          }}>
             {assignment.match?.opponent || 'Okänd motståndare'}
           </div>
-          <div style={{ fontSize: '14px', opacity: 0.9 }}>
+          <div style={{ 
+            fontSize: isMobile ? '13px' : '14px', 
+            opacity: 0.9,
+            lineHeight: '1.4'
+          }}>
             {formatDate(assignment.match?.date)} • {assignment.match?.time || 'TBA'} • 
             {assignment.match?.match_type === 'away' ? ' Bortamatch' : ' Hemmamatch'}
             {assignment.match?.distance_miles && ` • ${assignment.match.distance_miles} mil`}
           </div>
         </div>
 
-        {/* Suggested Times Button */}
+        {/* Suggested Times Button - MOBILANPASSAD */}
         {assignment.match?.time && assignment.match.time !== 'TBA' && (
-          <div style={{ marginBottom: '24px', textAlign: 'center' }}>
+          <div style={{ 
+            marginBottom: isMobile ? '20px' : '24px', 
+            textAlign: 'center' 
+          }}>
             <button
               onClick={handleUseSuggested}
               style={{
                 background: '#f1f5f9',
                 border: '1px solid #e2e8f0',
                 borderRadius: '12px',
-                padding: '8px 24px',
-                fontSize: '14px',
+                padding: isMobile ? '12px 20px' : '8px 24px',
+                fontSize: isMobile ? '15px' : '14px',
                 fontWeight: '500',
                 color: '#374151',
                 cursor: 'pointer',
-                transition: 'all 0.3s ease'
+                transition: 'all 0.3s ease',
+                minHeight: isMobile ? '44px' : 'auto',
+                width: isMobile ? '100%' : 'auto'
               }}
               onMouseEnter={(e) => {
                 e.target.style.background = '#e2e8f0'
@@ -286,18 +337,24 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
               onMouseLeave={(e) => {
                 e.target.style.background = '#f1f5f9'
               }}
+              onTouchStart={(e) => {
+                e.target.style.transform = 'scale(0.98)'
+              }}
+              onTouchEnd={(e) => {
+                e.target.style.transform = 'scale(1)'
+              }}
             >
-              💡 Använd föreslagna tider (baserat på matchtid)
+              💡 {isMobile ? 'Föreslagna tider' : 'Använd föreslagna tider (baserat på matchtid)'}
             </button>
           </div>
         )}
         
-        {/* Time Inputs */}
+        {/* Time Inputs - MOBILANPASSAD */}
         <div style={{ 
           display: 'grid', 
-          gridTemplateColumns: '1fr 1fr', 
-          gap: '24px',
-          marginBottom: '24px' 
+          gridTemplateColumns: isMobile ? '1fr' : '1fr 1fr', 
+          gap: isMobile ? '16px' : '24px',
+          marginBottom: isMobile ? '20px' : '24px'
         }}>
           <div>
             <label style={{ 
@@ -305,7 +362,7 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
               marginBottom: '8px', 
               fontWeight: '600',
               color: '#374151',
-              fontSize: '14px'
+              fontSize: isMobile ? '16px' : '14px'
             }}>
               Starttid
             </label>
@@ -315,11 +372,12 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
               onChange={(e) => handleInputChange('start_time', e.target.value)}
               style={{
                 width: '100%',
-                padding: '12px',
+                padding: isMobile ? '16px 12px' : '12px',
                 border: '2px solid #e5e7eb',
                 borderRadius: '12px',
-                fontSize: '16px',
-                transition: 'border-color 0.3s ease'
+                fontSize: isMobile ? '18px' : '16px', // Större för att förhindra zoom på iOS
+                transition: 'border-color 0.3s ease',
+                minHeight: isMobile ? '48px' : 'auto'
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = '#ef4444'
@@ -336,7 +394,7 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
               marginBottom: '8px', 
               fontWeight: '600',
               color: '#374151',
-              fontSize: '14px'
+              fontSize: isMobile ? '16px' : '14px'
             }}>
               Sluttid
             </label>
@@ -346,11 +404,12 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
               onChange={(e) => handleInputChange('end_time', e.target.value)}
               style={{
                 width: '100%',
-                padding: '12px',
+                padding: isMobile ? '16px 12px' : '12px',
                 border: '2px solid #e5e7eb',
                 borderRadius: '12px',
-                fontSize: '16px',
-                transition: 'border-color 0.3s ease'
+                fontSize: isMobile ? '18px' : '16px', // Större för att förhindra zoom på iOS
+                transition: 'border-color 0.3s ease',
+                minHeight: isMobile ? '48px' : 'auto'
               }}
               onFocus={(e) => {
                 e.target.style.borderColor = '#ef4444'
@@ -362,18 +421,18 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
           </div>
         </div>
         
-        {/* Hours Calculation */}
+        {/* Hours Calculation - MOBILANPASSAD */}
         <div style={{
           background: isStandardHours ? '#d1fae5' : '#fef3c7',
           border: `1px solid ${isStandardHours ? '#10b981' : '#f59e0b'}`,
           borderRadius: '12px',
-          padding: '20px',
+          padding: isMobile ? '16px' : '20px',
           textAlign: 'center',
-          marginBottom: '24px'
+          marginBottom: isMobile ? '20px' : '24px'
         }}>
           <div style={{ 
             fontWeight: '700', 
-            fontSize: '20px', 
+            fontSize: isMobile ? '18px' : '20px', 
             color: isStandardHours ? '#065f46' : '#92400e',
             marginBottom: '8px'
           }}>
@@ -381,7 +440,7 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
           </div>
           {!isStandardHours && (
             <div style={{ 
-              fontSize: '14px', 
+              fontSize: isMobile ? '13px' : '14px', 
               color: '#92400e',
               fontWeight: '500'
             }}>
@@ -390,14 +449,14 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
           )}
         </div>
         
-        {/* Notes */}
-        <div style={{ marginBottom: '32px' }}>
+        {/* Notes - MOBILANPASSAD */}
+        <div style={{ marginBottom: isMobile ? '32px' : '32px' }}>
           <label style={{ 
             display: 'block', 
             marginBottom: '8px', 
             fontWeight: '600',
             color: '#374151',
-            fontSize: '14px'
+            fontSize: isMobile ? '16px' : '14px'
           }}>
             Anteckningar (valfritt)
           </label>
@@ -405,16 +464,17 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
             value={editingHours.notes}
             onChange={(e) => handleInputChange('notes', e.target.value)}
             placeholder="T.ex. övertid, extratid, särskilda förhållanden..."
-            rows="3"
+            rows={isMobile ? "4" : "3"}
             style={{
               width: '100%',
-              padding: '12px',
+              padding: isMobile ? '16px 12px' : '12px',
               border: '2px solid #e5e7eb',
               borderRadius: '12px',
-              fontSize: '14px',
+              fontSize: isMobile ? '16px' : '14px',
               resize: 'vertical',
               fontFamily: 'inherit',
-              transition: 'border-color 0.3s ease'
+              transition: 'border-color 0.3s ease',
+              minHeight: isMobile ? '100px' : '80px'
             }}
             onFocus={(e) => {
               e.target.style.borderColor = '#ef4444'
@@ -425,11 +485,12 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
           />
         </div>
         
-        {/* Action Buttons */}
+        {/* Action Buttons - MOBILANPASSAD */}
         <div style={{ 
           display: 'flex', 
-          gap: '16px',
-          justifyContent: 'flex-end'
+          flexDirection: isMobile ? 'column-reverse' : 'row',
+          gap: isMobile ? '12px' : '16px',
+          justifyContent: isMobile ? 'stretch' : 'flex-end'
         }}>
           <button
             onClick={onClose}
@@ -438,17 +499,25 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
               color: '#374151',
               border: '1px solid #e2e8f0',
               borderRadius: '12px',
-              padding: '12px 24px',
-              fontSize: '14px',
+              padding: isMobile ? '16px 24px' : '12px 24px',
+              fontSize: isMobile ? '16px' : '14px',
               fontWeight: '500',
               cursor: 'pointer',
-              transition: 'all 0.3s ease'
+              transition: 'all 0.3s ease',
+              minHeight: '48px', // Touch-friendly
+              flex: isMobile ? '1' : '0 0 auto'
             }}
             onMouseEnter={(e) => {
               e.target.style.background = '#e2e8f0'
             }}
             onMouseLeave={(e) => {
               e.target.style.background = '#f1f5f9'
+            }}
+            onTouchStart={(e) => {
+              e.target.style.transform = 'scale(0.98)'
+            }}
+            onTouchEnd={(e) => {
+              e.target.style.transform = 'scale(1)'
             }}
           >
             Avbryt
@@ -461,27 +530,39 @@ function TimeEditor({ assignment, guard, onSave, onClose }) {
               color: 'white',
               border: 'none',
               borderRadius: '12px',
-              padding: '12px 24px',
-              fontSize: '14px',
+              padding: isMobile ? '16px 24px' : '12px 24px',
+              fontSize: isMobile ? '16px' : '14px',
               fontWeight: '600',
               cursor: saving ? 'not-allowed' : 'pointer',
               transition: 'all 0.3s ease',
               display: 'flex',
               alignItems: 'center',
               gap: '8px',
-              minWidth: '120px',
-              justifyContent: 'center'
+              minWidth: isMobile ? 'auto' : '120px',
+              minHeight: '48px', // Touch-friendly
+              justifyContent: 'center',
+              flex: isMobile ? '1' : '0 0 auto'
             }}
             onMouseEnter={(e) => {
-              if (!saving && !e.target.disabled) {
+              if (!saving && !e.target.disabled && !isMobile) {
                 e.target.style.transform = 'translateY(-1px)'
                 e.target.style.boxShadow = '0 4px 12px rgba(239, 68, 68, 0.3)'
               }
             }}
             onMouseLeave={(e) => {
-              if (!saving && !e.target.disabled) {
+              if (!saving && !e.target.disabled && !isMobile) {
                 e.target.style.transform = 'translateY(0)'
                 e.target.style.boxShadow = 'none'
+              }
+            }}
+            onTouchStart={(e) => {
+              if (!saving && !e.target.disabled) {
+                e.target.style.transform = 'scale(0.98)'
+              }
+            }}
+            onTouchEnd={(e) => {
+              if (!saving && !e.target.disabled) {
+                e.target.style.transform = 'scale(1)'
               }
             }}
           >

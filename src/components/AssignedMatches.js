@@ -1,5 +1,5 @@
 // 📋 FILNAMN: src/components/AssignedMatches.js
-// 📄 ÅTGÄRD: ERSÄTT din befintliga AssignedMatches.js med denna version
+// 📄 ÅTGÄRD: ERSÄTT din befintliga AssignedMatches.js med denna MOBILANPASSADE version
 
 import { useState } from 'react'
 import MatchPersonnelModal from './MatchPersonnelModal'
@@ -8,6 +8,10 @@ function AssignedMatches({ assignments, onEditTimes }) {
   const [showAll, setShowAll] = useState(false)
   const [selectedMatch, setSelectedMatch] = useState(null)
   const [showPersonnelModal, setShowPersonnelModal] = useState(false)
+
+  // Detektera skärmstorlek
+  const isMobile = window.innerWidth <= 768
+  const isSmallMobile = window.innerWidth <= 480
 
   const formatTime = (timeString) => {
     if (!timeString) return 'N/A'
@@ -22,6 +26,20 @@ function AssignedMatches({ assignments, onEditTimes }) {
     const tomorrow = new Date(today)
     tomorrow.setDate(tomorrow.getDate() + 1)
     
+    if (isMobile) {
+      // Kortare format på mobil
+      if (date.toDateString() === today.toDateString()) {
+        return 'Idag'
+      } else if (date.toDateString() === tomorrow.toDateString()) {
+        return 'Imorgon'
+      }
+      return date.toLocaleDateString('sv-SE', { 
+        day: 'numeric', 
+        month: 'short'
+      })
+    }
+    
+    // Fullständigt format på desktop
     const options = { 
       weekday: 'long', 
       year: 'numeric', 
@@ -39,44 +57,6 @@ function AssignedMatches({ assignments, onEditTimes }) {
     return formattedDate
   }
 
-  const getStatusBadge = (assignment) => {
-    if (!assignment.match) {
-      return { 
-        text: 'Okänd status', 
-        color: '#6b7280', 
-        bg: '#f3f4f6',
-        priority: 4
-      }
-    }
-
-    const { match, hasWorkHours } = assignment
-    const matchDate = new Date(match.date)
-    const today = new Date()
-    
-    if (matchDate < today) {
-      return { 
-        text: 'Genomförd', 
-        color: '#065f46', 
-        bg: '#d1fae5',
-        priority: 3
-      }
-    } else if (hasWorkHours) {
-      return { 
-        text: 'Tider satta', 
-        color: '#1e40af', 
-        bg: '#dbeafe',
-        priority: 2
-      }
-    } else {
-      return { 
-        text: 'Behöver tider', 
-        color: '#92400e', 
-        bg: '#fef3c7',
-        priority: 1
-      }
-    }
-  }
-
   const handleMatchClick = (match) => {
     setSelectedMatch(match)
     setShowPersonnelModal(true)
@@ -87,58 +67,91 @@ function AssignedMatches({ assignments, onEditTimes }) {
     setSelectedMatch(null)
   }
 
-  // Filtrera endast kommande matcher
+  const handleBadgeClick = () => {
+    setShowAll(!showAll)
+  }
+
+  // Enkel filtrering av framtida matcher
   const today = new Date()
-  const upcomingAssignments = assignments.filter(assignment => {
-    if (!assignment.match) return false
-    return new Date(assignment.match.date) >= today
-  })
+  today.setHours(0, 0, 0, 0)
+  
+  const futureMatches = assignments
+    .filter(assignment => {
+      if (!assignment || !assignment.match || !assignment.match.date) return false
+      const matchDate = new Date(assignment.match.date)
+      matchDate.setHours(0, 0, 0, 0)
+      return matchDate >= today
+    })
+    .sort((a, b) => new Date(a.match.date) - new Date(b.match.date))
 
-  // Sortera: viktigast först (behöver tider), sedan datum
-  const sortedAssignments = [...upcomingAssignments].sort((a, b) => {
-    const statusA = getStatusBadge(a)
-    const statusB = getStatusBadge(b)
-    
-    // Först sortera på prioritet (behöver tider först)
-    if (statusA.priority !== statusB.priority) {
-      return statusA.priority - statusB.priority
-    }
-    
-    // Sedan sortera på datum
-    return new Date(a.match.date) - new Date(b.match.date)
-  })
-
-  // Visa endast 3 matcher som standard
-  const displayedAssignments = showAll ? sortedAssignments : sortedAssignments.slice(0, 3)
-  const hasMoreMatches = sortedAssignments.length > 3
+  // Bestäm vilka matcher som ska visas
+  const matchesToShow = showAll ? futureMatches : futureMatches.slice(0, 3)
 
   return (
     <div style={{
       background: 'rgba(255, 255, 255, 0.95)',
       backdropFilter: 'blur(20px)',
-      padding: '32px',
-      borderRadius: '24px',
+      padding: isMobile ? '20px' : '32px',
+      borderRadius: isMobile ? '16px' : '24px',
       boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
       border: '1px solid rgba(255, 255, 255, 0.2)',
-      marginBottom: '24px'
+      marginBottom: isMobile ? '16px' : '24px'
     }}>
-      {/* Enkel header */}
-      <div style={{ marginBottom: '24px' }}>
+      {/* Header med badge - MOBILANPASSAD */}
+      <div style={{
+        display: 'flex',
+        flexDirection: isSmallMobile ? 'column' : 'row',
+        justifyContent: 'space-between',
+        alignItems: isSmallMobile ? 'center' : 'center',
+        gap: isSmallMobile ? '12px' : '0',
+        marginBottom: isMobile ? '20px' : '24px'
+      }}>
         <h2 style={{
-          margin: '0 0 16px 0',
-          fontSize: '24px',
+          margin: 0,
+          fontSize: isMobile ? '20px' : '24px',
           fontWeight: '700',
-          color: '#1f2937'
+          color: '#1f2937',
+          textAlign: isSmallMobile ? 'center' : 'left'
         }}>
           Kommande Matcher
         </h2>
+
+        {/* Badge - MOBILANPASSAD */}
+        {futureMatches.length > 0 && (
+          <div 
+            onClick={handleBadgeClick}
+            style={{
+              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+              color: 'white',
+              padding: isMobile ? '10px 16px' : '8px 16px',
+              borderRadius: '12px',
+              fontSize: isMobile ? '16px' : '14px',
+              fontWeight: '600',
+              cursor: 'pointer',
+              transition: 'all 0.3s ease',
+              userSelect: 'none',
+              minHeight: '44px', // Touch-friendly
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center'
+            }}
+            onTouchStart={(e) => {
+              e.target.style.transform = 'scale(0.98)'
+            }}
+            onTouchEnd={(e) => {
+              e.target.style.transform = 'scale(1)'
+            }}
+          >
+            {showAll ? 'Visa färre' : `${futureMatches.length} matcher`}
+          </div>
+        )}
       </div>
 
-      {/* Matches List */}
-      {displayedAssignments.length === 0 ? (
+      {/* Lista över matcher - MOBILANPASSAD */}
+      {futureMatches.length === 0 ? (
         <div style={{
           textAlign: 'center',
-          padding: '48px',
+          padding: isMobile ? '32px 16px' : '48px',
           color: '#6b7280',
           background: '#f8fafc',
           borderRadius: '16px',
@@ -147,177 +160,150 @@ function AssignedMatches({ assignments, onEditTimes }) {
           <h3 style={{
             margin: '0 0 16px 0',
             color: '#374151',
-            fontSize: '18px',
+            fontSize: isMobile ? '16px' : '18px',
             fontWeight: '600'
           }}>
             Inga kommande matcher
           </h3>
-          <p style={{ margin: 0 }}>
-            Du har inga schemalagda matcher framöver.
+          <p style={{ margin: 0, fontSize: isMobile ? '14px' : '16px' }}>
+            Du har inga tilldelade matcher framöver.
           </p>
         </div>
       ) : (
-        <div>
-          <div style={{ display: 'flex', flexDirection: 'column', gap: '12px' }}>
-            {displayedAssignments.map(assignment => {
-              const status = getStatusBadge(assignment)
-              const isUrgent = status.priority === 1 // Behöver tider
-              
-              return (
-                <div
-                  key={assignment.id}
-                  style={{
-                    border: isUrgent ? '2px solid #f59e0b' : '1px solid #e5e7eb',
-                    borderRadius: '16px',
-                    padding: '20px',
-                    background: isUrgent 
-                      ? 'linear-gradient(135deg, #fef3c7 0%, white 100%)'
-                      : 'white',
-                    transition: 'all 0.3s ease',
-                    position: 'relative'
-                  }}
-                  onMouseEnter={(e) => {
-                    e.currentTarget.style.transform = 'translateY(-2px)'
-                    e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.1)'
-                  }}
-                  onMouseLeave={(e) => {
-                    e.currentTarget.style.transform = 'translateY(0)'
-                    e.currentTarget.style.boxShadow = 'none'
-                  }}
-                >
-                  <div style={{
-                    display: 'grid',
-                    gridTemplateColumns: '1fr auto',
-                    gap: '20px',
-                    alignItems: 'center'
-                  }}>
-                    {/* Match Info */}
-                    <div>
-                      <div style={{
-                        marginBottom: '8px'
-                      }}>
-                        <h3 
-                          onClick={() => handleMatchClick(assignment.match)}
-                          style={{ 
-                            margin: 0, 
-                            fontSize: '18px', 
-                            fontWeight: '700',
-                            color: '#ef4444',
-                            cursor: 'pointer',
-                            transition: 'all 0.3s ease',
-                            textDecoration: 'underline',
-                            textDecorationColor: 'transparent'
-                          }}
-                          onMouseEnter={(e) => {
-                            e.target.style.color = '#dc2626'
-                            e.target.style.textDecorationColor = '#dc2626'
-                          }}
-                          onMouseLeave={(e) => {
-                            e.target.style.color = '#ef4444'
-                            e.target.style.textDecorationColor = 'transparent'
-                          }}
-                        >
-                          IF Troja-Ljungby - {assignment.match?.opponent || 'Okänd motståndare'} 👥
-                        </h3>
-                      </div>
-                      
-                      <div style={{ 
-                        color: '#6b7280', 
-                        fontSize: '14px',
-                        marginBottom: '12px',
-                        fontWeight: '500'
-                      }}>
-                        {formatDate(assignment.match?.date)} • {assignment.match?.time || 'TBA'} •
-                        {assignment.match?.match_type === 'away' ? ' Bortamatch' : ' Hemmamatch'}
-                      </div>
-                      
-                      {assignment.hasWorkHours && assignment.workHours && (
-                        <div style={{
-                          background: '#d1fae5',
-                          border: '1px solid #10b981',
-                          padding: '12px',
-                          borderRadius: '8px',
-                          fontSize: '14px'
-                        }}>
-                          <strong>Arbetstider:</strong> {formatTime(assignment.workHours.start_time)} - {formatTime(assignment.workHours.end_time)} 
-                          ({assignment.workHours.total_hours}h)
-                        </div>
-                      )}
-                    </div>
-
-                    {/* Action Button */}
-                    <button
-                      onClick={() => onEditTimes(assignment)}
-                      style={{
-                        background: isUrgent 
-                          ? 'linear-gradient(135deg, #f59e0b 0%, #d97706 100%)'
-                          : 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-                        color: 'white',
-                        border: 'none',
-                        borderRadius: '12px',
-                        padding: '12px 20px',
-                        fontSize: '14px',
-                        fontWeight: '600',
+        <div style={{ 
+          display: 'flex', 
+          flexDirection: 'column', 
+          gap: isMobile ? '12px' : '12px' 
+        }}>
+          {matchesToShow.map(assignment => (
+            <div
+              key={assignment.id}
+              style={{
+                border: '1px solid #e5e7eb',
+                borderRadius: isMobile ? '12px' : '16px',
+                padding: isMobile ? '16px' : '20px',
+                background: 'white',
+                transition: 'all 0.3s ease'
+              }}
+              onMouseEnter={(e) => {
+                if (!isMobile) {
+                  e.currentTarget.style.transform = 'translateY(-2px)'
+                  e.currentTarget.style.boxShadow = '0 8px 24px rgba(0, 0, 0, 0.1)'
+                }
+              }}
+              onMouseLeave={(e) => {
+                if (!isMobile) {
+                  e.currentTarget.style.transform = 'translateY(0)'
+                  e.currentTarget.style.boxShadow = 'none'
+                }
+              }}
+            >
+              <div style={{
+                display: 'flex',
+                flexDirection: isSmallMobile ? 'column' : 'row',
+                gap: isMobile ? '16px' : '20px',
+                alignItems: isSmallMobile ? 'stretch' : 'center'
+              }}>
+                {/* Match Info */}
+                <div style={{ flex: '1 1 auto' }}>
+                  <div style={{ marginBottom: '8px' }}>
+                    <h3 
+                      onClick={() => handleMatchClick(assignment.match)}
+                      style={{ 
+                        margin: 0, 
+                        fontSize: isMobile ? '16px' : '18px', 
+                        fontWeight: '700',
+                        color: '#ef4444',
                         cursor: 'pointer',
                         transition: 'all 0.3s ease',
-                        minWidth: '110px'
+                        textDecoration: 'underline',
+                        textDecorationColor: 'transparent',
+                        lineHeight: '1.3'
                       }}
                       onMouseEnter={(e) => {
-                        e.target.style.transform = 'translateY(-1px)'
-                        e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)'
+                        e.target.style.color = '#dc2626'
+                        e.target.style.textDecorationColor = '#dc2626'
                       }}
                       onMouseLeave={(e) => {
-                        e.target.style.transform = 'translateY(0)'
-                        e.target.style.boxShadow = 'none'
+                        e.target.style.color = '#ef4444'
+                        e.target.style.textDecorationColor = 'transparent'
                       }}
                     >
-                      {assignment.hasWorkHours ? 'Ändra' : 'Sätt tider'}
-                    </button>
+                      {isSmallMobile ? assignment.match?.opponent : `IF Troja-Ljungby - ${assignment.match?.opponent || 'Okänd motståndare'}`} 👥
+                    </h3>
                   </div>
+                  
+                  <div style={{ 
+                    color: '#6b7280', 
+                    fontSize: isMobile ? '13px' : '14px',
+                    marginBottom: '12px',
+                    fontWeight: '500',
+                    lineHeight: '1.4'
+                  }}>
+                    {formatDate(assignment.match?.date)} • {assignment.match?.time || 'TBA'} • 
+                    {assignment.match?.match_type === 'away' ? ' Borta' : ' Hemma'}
+                  </div>
+                  
+                  {assignment.hasWorkHours && assignment.workHours && (
+                    <div style={{
+                      background: '#d1fae5',
+                      border: '1px solid #10b981',
+                      padding: isMobile ? '8px 12px' : '12px',
+                      borderRadius: '8px',
+                      fontSize: isMobile ? '13px' : '14px',
+                      marginBottom: isSmallMobile ? '12px' : '0'
+                    }}>
+                      <strong>Arbetstider:</strong> {formatTime(assignment.workHours.start_time)} - {formatTime(assignment.workHours.end_time)} 
+                      ({assignment.workHours.total_hours}h)
+                    </div>
+                  )}
                 </div>
-              )
-            })}
-          </div>
 
-          {/* Expandera/Dölj knapp */}
-          {hasMoreMatches && (
-            <div style={{
-              textAlign: 'center',
-              marginTop: '20px'
-            }}>
-              <button
-                onClick={() => setShowAll(!showAll)}
-                style={{
-                  background: 'transparent',
-                  border: '2px solid #ef4444',
-                  color: '#ef4444',
-                  borderRadius: '12px',
-                  padding: '8px 24px',
-                  fontSize: '14px',
-                  fontWeight: '600',
-                  cursor: 'pointer',
-                  transition: 'all 0.3s ease'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = '#ef4444'
-                  e.target.style.color = 'white'
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'transparent'
-                  e.target.style.color = '#ef4444'
-                }}
-              >
-                {showAll 
-                  ? `Visa färre (${sortedAssignments.length - 3} dolda)`
-                  : `Visa alla (${sortedAssignments.length - 3} till)`
-                }
-              </button>
+                {/* Action Button - MOBILANPASSAD */}
+                <button
+                  onClick={() => onEditTimes(assignment)}
+                  style={{
+                    background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+                    color: 'white',
+                    border: 'none',
+                    borderRadius: '12px',
+                    padding: isMobile ? '14px 20px' : '12px 20px',
+                    fontSize: isMobile ? '16px' : '14px',
+                    fontWeight: '600',
+                    cursor: 'pointer',
+                    transition: 'all 0.3s ease',
+                    minWidth: isMobile ? '100%' : '110px',
+                    minHeight: '44px', // Touch-friendly
+                    flex: isSmallMobile ? '0 0 auto' : '0 0 110px'
+                  }}
+                  onMouseEnter={(e) => {
+                    if (!isMobile) {
+                      e.target.style.transform = 'translateY(-1px)'
+                      e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.2)'
+                    }
+                  }}
+                  onMouseLeave={(e) => {
+                    if (!isMobile) {
+                      e.target.style.transform = 'translateY(0)'
+                      e.target.style.boxShadow = 'none'
+                    }
+                  }}
+                  onTouchStart={(e) => {
+                    e.target.style.transform = 'scale(0.98)'
+                  }}
+                  onTouchEnd={(e) => {
+                    e.target.style.transform = 'scale(1)'
+                  }}
+                >
+                  {assignment.hasWorkHours ? 'Ändra' : 'Sätt tider'}
+                </button>
+              </div>
             </div>
-          )}
+          ))}
         </div>
       )}
 
-      {/* Personnel Modal */}
+      {/* Personnel Modal - MOBILANPASSAD */}
       {showPersonnelModal && selectedMatch && (
         <MatchPersonnelModal
           match={selectedMatch}
