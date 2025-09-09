@@ -1,5 +1,5 @@
-// 📋 FILNAMN: src/components/Dashboard.js
-// 📄 ÅTGÄRD: ERSÄTT din befintliga Dashboard.js med denna MOBILANPASSADE version
+// 📁 FILNAMN: src/components/Dashboard.js
+// 🎨 ÅTGÄRD: ERSÄTT din befintliga Dashboard.js med denna FÖRBÄTTRADE version
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
@@ -70,7 +70,6 @@ function Dashboard({ guard, onLogout }) {
           `)
           .eq('personnel_id', guard.id)
           .order('work_date', { ascending: false })
-          // BORTTAGET: .limit(5) - Nu hämtas ALLA arbetstider
 
         if (whError) throw whError
 
@@ -119,26 +118,33 @@ function Dashboard({ guard, onLogout }) {
         justifyContent: 'center',
         background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
         color: 'white',
-        fontSize: '18px',
+        fontSize: '24px',
         padding: '20px'
       }}>
         <div style={{
           textAlign: 'center',
           background: 'rgba(255, 255, 255, 0.1)',
-          padding: '30px',
-          borderRadius: '16px',
-          backdropFilter: 'blur(10px)'
+          padding: '40px',
+          borderRadius: '24px',
+          backdropFilter: 'blur(20px)',
+          border: '1px solid rgba(255, 255, 255, 0.2)',
+          boxShadow: '0 20px 40px rgba(0, 0, 0, 0.1)'
         }}>
           <div style={{
-            width: '40px',
-            height: '40px',
+            width: '60px',
+            height: '60px',
             border: '4px solid rgba(255, 255, 255, 0.3)',
             borderTop: '4px solid white',
             borderRadius: '50%',
             animation: 'spin 1s linear infinite',
-            margin: '0 auto 20px'
+            margin: '0 auto 24px'
           }} />
-          Laddar dashboard...
+          <div style={{ fontSize: '24px', fontWeight: '700', marginBottom: '8px' }}>
+            Laddar dashboard...
+          </div>
+          <div style={{ fontSize: '16px', opacity: 0.8 }}>
+            Hämtar dina uppdrag
+          </div>
         </div>
       </div>
     )
@@ -148,64 +154,125 @@ function Dashboard({ guard, onLogout }) {
     <div style={{
       minHeight: '100vh',
       background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
-      padding: window.innerWidth <= 768 ? '12px' : '24px'  // Mindre padding på mobil
+      padding: window.innerWidth <= 768 ? '16px' : '24px'
     }}>
-      {/* Header - MOBILANPASSAD */}
+      {/* Header - FÖRBÄTTRAD med Troja-logo, större text och centrerat */}
       <div style={{
         display: 'flex',
-        flexDirection: window.innerWidth <= 480 ? 'column' : 'row', // Stack på små skärmar
+        flexDirection: window.innerWidth <= 768 ? 'column' : 'row',
         justifyContent: 'space-between',
-        alignItems: window.innerWidth <= 480 ? 'stretch' : 'center',
-        gap: window.innerWidth <= 480 ? '12px' : '0',
-        maxWidth: '900px',  // Bredare för desktop
+        alignItems: 'center',
+        gap: window.innerWidth <= 768 ? '20px' : '24px',
+        maxWidth: '1000px',
         margin: '0 auto',
-        marginBottom: window.innerWidth <= 768 ? '16px' : '24px',
-        padding: window.innerWidth <= 768 ? '16px' : '20px',
-        background: 'white',
-        borderRadius: '16px',
-        boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)'
+        marginBottom: window.innerWidth <= 768 ? '24px' : '32px',
+        padding: window.innerWidth <= 768 ? '24px' : '32px',
+        background: 'rgba(255, 255, 255, 0.95)',
+        borderRadius: '24px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.15)',
+        backdropFilter: 'blur(20px)',
+        border: '1px solid rgba(255, 255, 255, 0.2)'
       }}>
-        <h1 style={{
-          margin: 0,
-          fontSize: window.innerWidth <= 480 ? '18px' : '20px',
-          fontWeight: '700',
-          color: '#ef4444',
-          textAlign: window.innerWidth <= 480 ? 'center' : 'left'
+        {/* Logo + Välkomsttext - KOMBINERAD sektion */}
+        <div style={{ 
+          display: 'flex',
+          alignItems: 'center',
+          gap: window.innerWidth <= 768 ? '16px' : '24px',
+          textAlign: window.innerWidth <= 768 ? 'center' : 'left',
+          flex: '1',
+          flexDirection: window.innerWidth <= 480 ? 'column' : 'row'
         }}>
-          Välkommen {guard.name}
-        </h1>
+          {/* Troja Logo */}
+          <img 
+            src="/troja-logo.png" 
+            alt="Troja Ljungby" 
+            style={{
+              maxWidth: window.innerWidth <= 768 ? '60px' : '80px',
+              height: 'auto',
+              filter: 'drop-shadow(0 4px 12px rgba(239, 68, 68, 0.3))',
+              transition: 'all 0.3s ease'
+            }}
+            onError={(e) => {
+              // Fallback till emoji om bilden inte hittas
+              e.target.style.display = 'none'
+              e.target.nextSibling.style.display = 'inline-block'
+            }}
+          />
+          <div style={{
+            display: 'none',
+            fontSize: window.innerWidth <= 768 ? '40px' : '60px',
+            filter: 'drop-shadow(0 4px 12px rgba(239, 68, 68, 0.3))'
+          }}>
+            🏒
+          </div>
+
+          {/* Välkomsttext */}
+          <div>
+            <h1 style={{
+              margin: 0,
+              fontSize: window.innerWidth <= 768 ? '24px' : '32px',
+              fontWeight: '800',
+              background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
+              WebkitBackgroundClip: 'text',
+              WebkitTextFillColor: 'transparent',
+              backgroundClip: 'text',
+              letterSpacing: '-0.5px',
+              lineHeight: '1.2'
+            }}>
+              Välkommen {guard.name} 
+            </h1>
+            <p style={{
+              margin: '4px 0 0 0',
+              fontSize: window.innerWidth <= 768 ? '14px' : '16px',
+              color: '#6b7280',
+              fontWeight: '500'
+            }}>
+              Översikt för kommande uppdrag
+            </p>
+          </div>
+        </div>
+
+        {/* Logga ut-knapp - FÖRBÄTTRAD design */}
         <button 
           onClick={onLogout}
           style={{
-            padding: window.innerWidth <= 480 ? '12px 20px' : '10px 18px',
-            background: '#f3f4f6',
+            padding: window.innerWidth <= 768 ? '16px 24px' : '18px 32px',
+            background: 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)',
             color: '#374151',
-            border: '1px solid #d1d5db',
-            borderRadius: '8px',
+            border: '2px solid #d1d5db',
+            borderRadius: '16px',
             cursor: 'pointer',
-            fontSize: window.innerWidth <= 480 ? '16px' : '14px',
-            fontWeight: '600',
-            minHeight: '44px', // Touch-friendly
-            transition: 'all 0.3s ease'
+            fontSize: window.innerWidth <= 768 ? '16px' : '18px',
+            fontWeight: '700',
+            minHeight: '56px',
+            transition: 'all 0.3s ease',
+            boxShadow: '0 4px 12px rgba(0, 0, 0, 0.1)',
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center'
           }}
           onMouseEnter={(e) => {
-            e.target.style.background = '#e5e7eb'
+            e.target.style.background = 'linear-gradient(135deg, #e5e7eb 0%, #d1d5db 100%)'
+            e.target.style.transform = 'translateY(-2px)'
+            e.target.style.boxShadow = '0 8px 20px rgba(0, 0, 0, 0.15)'
           }}
           onMouseLeave={(e) => {
-            e.target.style.background = '#f3f4f6'
+            e.target.style.background = 'linear-gradient(135deg, #f3f4f6 0%, #e5e7eb 100%)'
+            e.target.style.transform = 'translateY(0)'
+            e.target.style.boxShadow = '0 4px 12px rgba(0, 0, 0, 0.1)'
           }}
         >
           Logga ut
         </button>
       </div>
 
-      {/* Main content - MOBILANPASSAD */}
+      {/* Main content - CENTRERAT och förbättrat spacing */}
       <div style={{
-        maxWidth: '900px',  // Bredare för desktop
+        maxWidth: '1000px',
         margin: '0 auto',
         display: 'flex',
         flexDirection: 'column',
-        gap: window.innerWidth <= 768 ? '16px' : '24px'
+        gap: window.innerWidth <= 768 ? '20px' : '32px'
       }}>
         {/* NextMatch komponent */}
         <NextMatch guard={guard} />
@@ -220,7 +287,7 @@ function Dashboard({ guard, onLogout }) {
         <MyHours guard={guard} />
       </div>
 
-      {/* TimeEditor Modal - MOBILANPASSAD */}
+      {/* TimeEditor Modal */}
       {showTimeEditor && selectedAssignment && (
         <TimeEditor
           assignment={selectedAssignment}
@@ -230,7 +297,7 @@ function Dashboard({ guard, onLogout }) {
         />
       )}
 
-      {/* Spin animation */}
+      {/* Global styles */}
       <style>
         {`
           @keyframes spin {
@@ -240,7 +307,7 @@ function Dashboard({ guard, onLogout }) {
           
           /* Mobilanpassad scrollbar */
           ::-webkit-scrollbar {
-            width: 6px;
+            width: 8px;
           }
           
           ::-webkit-scrollbar-track {
@@ -249,19 +316,34 @@ function Dashboard({ guard, onLogout }) {
           
           ::-webkit-scrollbar-thumb {
             background: rgba(255, 255, 255, 0.3);
-            border-radius: 3px;
+            border-radius: 4px;
+          }
+          
+          ::-webkit-scrollbar-thumb:hover {
+            background: rgba(255, 255, 255, 0.5);
           }
           
           /* Touch-friendly focus states */
           @media (max-width: 768px) {
             button:active {
-              transform: scale(0.98);
+              transform: scale(0.98) !important;
             }
             
             /* Förhindra zoom på iOS */
             input, select, textarea {
               font-size: 16px !important;
             }
+          }
+          
+          /* Smooth scrolling */
+          html {
+            scroll-behavior: smooth;
+          }
+          
+          /* Better text rendering */
+          * {
+            -webkit-font-smoothing: antialiased;
+            -moz-osx-font-smoothing: grayscale;
           }
         `}
       </style>

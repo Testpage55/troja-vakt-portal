@@ -1,5 +1,5 @@
 // 🔋 FILNAMN: src/components/Login.js
-// 📄 ÅTGÄRD: RENGJORD version - INGEN debug-information
+// 📄 ÅTGÄRD: ÅTERSTÄLLD till ren version - endast logo-växling för Jozsef
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
@@ -229,7 +229,7 @@ function Login({ onLogin }) {
                 e.target.style.boxShadow = 'none'
               }}
             >
-              <option value="">Välj vakt...</option>
+              <option value="">Välj ordningsvakt...</option>
               {personnel.map((person) => (
                 <option key={person.id} value={person.id}>
                   {person.name}
