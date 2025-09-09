@@ -1,33 +1,38 @@
-// NYTT MyHours.js - Ersätt HELA innehållet i din MyHours.js med denna kod
+// 📋 FILNAMN: src/components/MyHours.js
+// 🔄 ÅTGÄRD: ERSÄTT din befintliga MyHours.js med denna KOMPLETTA version
 
 import { useState, useEffect } from 'react'
 import { supabase } from '../supabaseClient'
 
-function MyHours({ guard, onEditWorkHour }) {
+function MyHours({ guard }) {
   const [workHours, setWorkHours] = useState([])
   const [loading, setLoading] = useState(true)
-  const [deleting, setDeleting] = useState(null)
-  const [showAll, setShowAll] = useState(false)
+  const [timeFilter, setTimeFilter] = useState('recent') // recent, month, season
+  const [stats, setStats] = useState({
+    totalHours: 0,
+    totalMatches: 0
+  })
 
   useEffect(() => {
-    fetchMyHours()
-  }, [guard.id])
+    fetchWorkHours()
+  }, [guard.id, timeFilter])
 
-  // Lyssna på uppdateringar från TimeRegistration
+  // Lyssna på uppdateringar
   useEffect(() => {
     const handleWorkHoursUpdated = () => {
-      fetchMyHours()
+      fetchWorkHours()
     }
 
     window.addEventListener('workHoursUpdated', handleWorkHoursUpdated)
     return () => window.removeEventListener('workHoursUpdated', handleWorkHoursUpdated)
   }, [])
 
-  const fetchMyHours = async () => {
+  const fetchWorkHours = async () => {
     setLoading(true)
     try {
-      const limit = showAll ? 50 : 10
-      const { data, error } = await supabase
+      const today = new Date().toISOString().split('T')[0]
+      
+      let query = supabase
         .from('work_hours')
         .select(`
           *,
@@ -39,71 +44,52 @@ function MyHours({ guard, onEditWorkHour }) {
           )
         `)
         .eq('personnel_id', guard.id)
+        .lt('work_date', today) // Endast matcher som redan har spelats
         .order('work_date', { ascending: false })
-        .limit(limit)
+
+      // Applicera filter
+      if (timeFilter === 'recent') {
+        query = query.limit(10)
+      } else if (timeFilter === 'month') {
+        const startOfMonth = new Date()
+        startOfMonth.setDate(1)
+        startOfMonth.setHours(0, 0, 0, 0)
+        query = query.gte('work_date', startOfMonth.toISOString().split('T')[0])
+      } else if (timeFilter === 'season') {
+        // Antag säsong = från september till maj
+        const currentYear = new Date().getFullYear()
+        const seasonStart = new Date(currentYear, 8, 1) // September
+        query = query.gte('work_date', seasonStart.toISOString().split('T')[0])
+      }
+      
+      const { data, error } = await query
       
       if (error) throw error
-      setWorkHours(data || [])
+      
+      // Filtrera bort arbetstider för framtida matcher
+      const completedWorkHours = (data || []).filter(wh => {
+        if (!wh.matches || !wh.matches.date) return true
+        return wh.matches.date < today
+      })
+      
+      setWorkHours(completedWorkHours)
+      calculateStats(completedWorkHours)
     } catch (error) {
       console.error('Error fetching work hours:', error)
-      // Fallback query without matches relation
-      try {
-        const limit = showAll ? 50 : 10
-        const { data: altData, error: altError } = await supabase
-          .from('work_hours')
-          .select('*')
-          .eq('personnel_id', guard.id)
-          .order('work_date', { ascending: false })
-          .limit(limit)
-        
-        if (altError) throw altError
-        setWorkHours(altData || [])
-      } catch (altError) {
-        console.error('Alt query failed:', altError)
-        setWorkHours([])
-      }
+      setWorkHours([])
     } finally {
       setLoading(false)
     }
   }
 
-  const handleEdit = (workHour) => {
-    if (onEditWorkHour) {
-      onEditWorkHour(workHour)
-    }
-  }
+  const calculateStats = (hours) => {
+    const totalHours = hours.reduce((sum, wh) => sum + (parseFloat(wh.total_hours) || 0), 0)
+    const totalMatches = hours.length
 
-  const handleDelete = async (workHourId) => {
-    const workHour = workHours.find(wh => wh.id === workHourId)
-    const opponent = workHour?.matches?.opponent || 'detta pass'
-    
-    const confirmed = window.confirm(
-      `Är du säker på att du vill ta bort arbetstiden för ${opponent}?`
-    )
-    
-    if (!confirmed) return
-
-    setDeleting(workHourId)
-    try {
-      const { error } = await supabase
-        .from('work_hours')
-        .delete()
-        .eq('id', workHourId)
-        .eq('personnel_id', guard.id)
-
-      if (error) throw error
-
-      setWorkHours(prev => prev.filter(wh => wh.id !== workHourId))
-      
-      // Trigga event för att uppdatera andra komponenter
-      window.dispatchEvent(new CustomEvent('workHoursUpdated'))
-      
-    } catch (error) {
-      console.error('Error deleting work hours:', error)
-      alert('Fel vid borttagning: ' + (error.message || 'Okänt fel'))
-    } finally {
-      setDeleting(null)
-    }
+    setStats({
+      totalHours: totalHours.toFixed(1),
+      totalMatches
+    })
   }
 
   const formatTime = (timeString) => {
@@ -113,380 +99,310 @@ function MyHours({ guard, onEditWorkHour }) {
 
   const formatDate = (dateString) => {
     if (!dateString) return 'Inget datum'
-    return new Date(dateString).toLocaleDateString('sv-SE')
+    const date = new Date(dateString)
+    
+    // Visa bara datum direkt, ingen "dagar sedan" logik
+    return date.toLocaleDateString('sv-SE', { 
+      day: 'numeric', 
+      month: 'short',
+      year: 'numeric'
+    })
   }
 
-  const totalHours = workHours.reduce((sum, wh) => {
-    const hours = wh.total_hours || 0
-    return sum + parseFloat(hours)
-  }, 0)
+  const getFilterLabel = () => {
+    switch (timeFilter) {
+      case 'recent': return 'Senaste 10 genomförda'
+      case 'month': return 'Genomförda denna månad'
+      case 'season': return 'Genomförda denna säsong'
+      default: return ''
+    }
+  }
 
   if (loading) {
     return (
-      <div className="my-hours">
-        <div className="loading">
-          <div className="spinner"></div>
-          Laddar dina timmar...
+      <div style={{
+        background: 'rgba(255, 255, 255, 0.95)',
+        backdropFilter: 'blur(20px)',
+        padding: '32px',
+        borderRadius: '24px',
+        boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+        border: '1px solid rgba(255, 255, 255, 0.2)'
+      }}>
+        <div style={{
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          gap: '12px',
+          padding: '48px',
+          fontSize: '18px',
+          color: '#6b7280'
+        }}>
+          <div style={{
+            width: '20px',
+            height: '20px',
+            border: '2px solid #e5e7eb',
+            borderTop: '2px solid #ef4444',
+            borderRadius: '50%',
+            animation: 'spin 1s linear infinite'
+          }} />
+          Laddar arbetstider...
         </div>
       </div>
     )
   }
 
   return (
-    <div className="my-hours">
-      <h2 style={{
-        marginBottom: 'var(--space-lg)',
-        color: 'var(--gray-800)',
-        fontSize: '20px',
-        fontWeight: '700'
+    <div style={{
+      background: 'rgba(255, 255, 255, 0.95)',
+      backdropFilter: 'blur(20px)',
+      padding: '32px',
+      borderRadius: '24px',
+      boxShadow: '0 8px 32px rgba(0, 0, 0, 0.1)',
+      border: '1px solid rgba(255, 255, 255, 0.2)'
+    }}>
+      {/* Header */}
+      <div style={{
+        display: 'flex',
+        justifyContent: 'space-between',
+        alignItems: 'center',
+        marginBottom: '32px'
       }}>
-        Dina Arbetstider
-      </h2>
-      
-      {/* Summary Cards */}
+        <h2 style={{
+          margin: 0,
+          fontSize: '20px',
+          fontWeight: '700',
+          color: '#1f2937'
+        }}>
+          Genomförda Arbetstider
+        </h2>
+
+        {/* Filter Buttons */}
+        <div style={{
+          display: 'flex',
+          gap: '4px',
+          background: '#f1f5f9',
+          borderRadius: '12px',
+          padding: '4px'
+        }}>
+          {[
+            { key: 'recent', label: 'Senaste' },
+            { key: 'month', label: 'Månaden' },
+            { key: 'season', label: 'Säsongen' }
+          ].map(filter => (
+            <button
+              key={filter.key}
+              onClick={() => setTimeFilter(filter.key)}
+              style={{
+                padding: '8px 16px',
+                borderRadius: '8px',
+                border: 'none',
+                background: timeFilter === filter.key ? 'white' : 'transparent',
+                color: timeFilter === filter.key ? '#ef4444' : '#6b7280',
+                fontSize: '12px',
+                fontWeight: '600',
+                cursor: 'pointer',
+                transition: 'all 0.3s ease',
+                boxShadow: timeFilter === filter.key ? '0 2px 4px rgba(0, 0, 0, 0.1)' : 'none'
+              }}
+            >
+              {filter.label}
+            </button>
+          ))}
+        </div>
+      </div>
+
+      {/* Endast 2 viktigaste statistik kort */}
       <div style={{
         display: 'grid',
-        gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))',
-        gap: 'var(--space-lg)',
-        marginBottom: 'var(--space-xl)'
+        gridTemplateColumns: 'repeat(auto-fit, minmax(200px, 1fr))',
+        gap: '16px',
+        marginBottom: '32px'
       }}>
-        {/* Total Hours Card */}
         <div style={{
-          background: 'linear-gradient(135deg, var(--success) 0%, var(--success-dark) 100%)',
-          borderRadius: 'var(--radius-xl)',
-          padding: 'var(--space-xl)',
-          textAlign: 'center',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 8px 24px rgba(168, 237, 234, 0.3)'
+          background: 'linear-gradient(135deg, #10b981 0%, #059669 100%)',
+          color: 'white',
+          padding: '24px',
+          borderRadius: '16px',
+          textAlign: 'center'
         }}>
-          <div style={{
-            position: 'absolute',
-            top: '-20px',
-            right: '-20px',
-            width: '80px',
-            height: '80px',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.2) 0%, transparent 70%)',
-            borderRadius: '50%'
-          }} />
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <h3 style={{ 
-              margin: '0 0 var(--space-xs) 0',
-              fontSize: '28px',
-              fontWeight: '700',
-              color: 'var(--gray-800)'
-            }}>
-              {totalHours.toFixed(1)}h
-            </h3>
-            <p style={{ 
-              margin: 0,
-              color: 'var(--gray-700)',
-              fontWeight: '600'
-            }}>
-              Totalt denna säsong
-            </p>
+          <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '8px' }}>
+            {stats.totalHours}h
+          </div>
+          <div style={{ fontSize: '14px', opacity: 0.9, fontWeight: '500' }}>
+            {getFilterLabel()}
           </div>
         </div>
 
-        {/* Total Assignments Card */}
         <div style={{
-          background: 'linear-gradient(135deg, var(--secondary) 0%, var(--secondary-dark) 100%)',
-          borderRadius: 'var(--radius-xl)',
-          padding: 'var(--space-xl)',
-          textAlign: 'center',
+          background: 'linear-gradient(135deg, #ef4444 0%, #dc2626 100%)',
           color: 'white',
-          position: 'relative',
-          overflow: 'hidden',
-          boxShadow: '0 8px 24px rgba(248, 113, 113, 0.3)'
+          padding: '24px',
+          borderRadius: '16px',
+          textAlign: 'center'
         }}>
-          <div style={{
-            position: 'absolute',
-            top: '-20px',
-            left: '-20px',
-            width: '80px',
-            height: '80px',
-            background: 'radial-gradient(circle, rgba(255,255,255,0.15) 0%, transparent 70%)',
-            borderRadius: '50%'
-          }} />
-          <div style={{ position: 'relative', zIndex: 1 }}>
-            <h3 style={{ 
-              margin: '0 0 var(--space-xs) 0',
-              fontSize: '28px',
-              fontWeight: '700'
-            }}>
-              {workHours.length}
-            </h3>
-            <p style={{ 
-              margin: 0,
-              opacity: 0.9,
-              fontWeight: '600'
-            }}>
-              Antal pass
-            </p>
+          <div style={{ fontSize: '28px', fontWeight: '700', marginBottom: '8px' }}>
+            {stats.totalMatches}
+          </div>
+          <div style={{ fontSize: '14px', opacity: 0.9, fontWeight: '500' }}>
+            Antal pass
           </div>
         </div>
       </div>
 
       {/* Work Hours List */}
-      <div>
+      {workHours.length === 0 ? (
         <div style={{
-          display: 'flex',
-          justifyContent: 'space-between',
-          alignItems: 'center',
-          marginBottom: 'var(--space-lg)'
+          textAlign: 'center',
+          padding: '48px',
+          color: '#6b7280',
+          background: '#f8fafc',
+          borderRadius: '16px',
+          border: '2px dashed #cbd5e0'
         }}>
           <h3 style={{
-            margin: 0,
+            margin: '0 0 16px 0',
+            color: '#374151',
             fontSize: '18px',
-            fontWeight: '600',
-            color: 'var(--gray-800)'
+            fontWeight: '600'
           }}>
-            Senaste registreringar
+            Inga genomförda arbetstider {getFilterLabel().toLowerCase()}
           </h3>
-          <button
-            onClick={() => {
-              setShowAll(!showAll)
-              if (!showAll) {
-                fetchMyHours()
-              }
-            }}
-            style={{
-              background: 'var(--gray-100)',
-              border: '1px solid var(--gray-200)',
-              borderRadius: 'var(--radius-md)',
-              padding: 'var(--space-sm) var(--space-md)',
-              cursor: 'pointer',
-              fontSize: '14px',
-              fontWeight: '500',
-              color: 'var(--gray-700)',
-              transition: 'all 0.3s ease'
-            }}
-            onMouseEnter={(e) => {
-              e.target.style.background = 'var(--gray-200)'
-            }}
-            onMouseLeave={(e) => {
-              e.target.style.background = 'var(--gray-100)'
-            }}
-          >
-            {showAll ? 'Visa färre' : 'Visa fler'}
-          </button>
+          <p style={{ margin: 0 }}>
+            {timeFilter === 'recent' && 'Du har inga registrerade arbetstider för genomförda matcher än.'}
+            {timeFilter === 'month' && 'Du har inga genomförda arbetstider denna månad.'}
+            {timeFilter === 'season' && 'Du har inga genomförda arbetstider denna säsong.'}
+          </p>
         </div>
-
-        {workHours.length === 0 ? (
-          <div className="no-match">
-            <h3 style={{
-              margin: '0 0 var(--space-md) 0',
-              color: 'var(--gray-700)',
-              fontSize: '20px',
-              fontWeight: '600'
-            }}>
-              Inga arbetstider registrerade än
-            </h3>
-            <p style={{
-              margin: '0 0 var(--space-lg) 0',
-              color: 'var(--gray-600)',
-              fontSize: '16px'
-            }}>
-              Klicka på "Registrera Arbetstid" för att komma igång.
-            </p>
-            <button 
-              onClick={fetchMyHours}
-              className="btn btn-primary"
-              style={{ fontSize: '14px', padding: 'var(--space-sm) var(--space-md)' }}
-            >
-              Uppdatera
-            </button>
-          </div>
-        ) : (
-          <div className="hours-table">
+      ) : (
+        <div>
+          <h3 style={{
+            margin: '0 0 20px 0',
+            fontSize: '16px',
+            fontWeight: '600',
+            color: '#374151'
+          }}>
+            {getFilterLabel()} arbetstider
+          </h3>
+          
+          <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
             {workHours.map(wh => (
-              <div key={wh.id} className="hours-row" style={{
-                background: 'var(--gray-50)',
-                border: '1px solid var(--gray-200)',
-                borderRadius: 'var(--radius-lg)',
-                padding: 'var(--space-lg)',
-                position: 'relative',
-                transition: 'all 0.3s ease',
-                display: 'grid',
-                gridTemplateColumns: '1fr 2fr 1.5fr auto auto',
-                gap: 'var(--space-md)',
-                alignItems: 'center'
-              }}>
+              <div
+                key={wh.id}
+                style={{
+                  background: '#f8fafc',
+                  border: '1px solid #e2e8f0',
+                  borderRadius: '12px',
+                  padding: '16px',
+                  transition: 'all 0.3s ease',
+                  display: 'grid',
+                  gridTemplateColumns: 'auto 1fr auto auto',
+                  gap: '16px',
+                  alignItems: 'center'
+                }}
+                onMouseEnter={(e) => {
+                  e.target.style.background = 'white'
+                  e.target.style.transform = 'translateY(-1px)'
+                  e.target.style.boxShadow = '0 2px 8px rgba(0, 0, 0, 0.1)'
+                }}
+                onMouseLeave={(e) => {
+                  e.target.style.background = '#f8fafc'
+                  e.target.style.transform = 'translateY(0)'
+                  e.target.style.boxShadow = 'none'
+                }}
+              >
                 {/* Date */}
                 <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 'var(--space-xs)'
+                  background: '#ef4444',
+                  color: 'white',
+                  padding: '6px 8px',
+                  borderRadius: '8px',
+                  fontSize: '11px',
+                  fontWeight: '600',
+                  textAlign: 'center',
+                  minWidth: '65px'
                 }}>
-                  <div style={{
-                    fontWeight: '600',
-                    color: 'var(--gray-800)',
-                    fontSize: '15px'
-                  }}>
-                    {formatDate(wh.work_date)}
-                  </div>
-                  <div style={{
-                    fontSize: '12px',
-                    color: 'var(--gray-500)',
-                    fontWeight: '500'
-                  }}>
-                    {wh.matches?.date && formatDate(wh.matches.date)}
-                  </div>
+                  {formatDate(wh.work_date)}
                 </div>
-                
-                {/* Match/Assignment */}
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 'var(--space-xs)'
-                }}>
+
+                {/* Match Info */}
+                <div>
                   <div style={{
                     fontWeight: '600',
-                    color: 'var(--gray-800)',
-                    fontSize: '15px'
+                    color: '#1f2937',
+                    fontSize: '15px',
+                    marginBottom: '2px'
                   }}>
                     {wh.matches?.opponent || 'Annat uppdrag'}
                   </div>
-                  {wh.matches?.match_type && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: 'var(--gray-500)',
-                      display: 'flex',
-                      alignItems: 'center',
-                      gap: 'var(--space-xs)'
-                    }}>
-                      <span>{wh.matches.match_type === 'away' ? 'Bortamatch' : 'Hemmamatch'}</span>
-                    </div>
-                  )}
-                </div>
-                
-                {/* Time */}
-                <div style={{
-                  display: 'flex',
-                  flexDirection: 'column',
-                  gap: 'var(--space-xs)',
-                  textAlign: 'center'
-                }}>
                   <div style={{
-                    fontWeight: '600',
-                    color: 'var(--gray-800)',
-                    fontSize: '15px'
+                    fontSize: '12px',
+                    color: '#6b7280',
+                    display: 'flex',
+                    alignItems: 'center',
+                    gap: '8px'
                   }}>
+                    {wh.matches?.match_type && (
+                      <span>{wh.matches.match_type === 'away' ? '🚌' : '🏠'}</span>
+                    )}
+                    {wh.notes && (
+                      <span>{wh.notes.substring(0, 15)}{wh.notes.length > 15 ? '...' : ''}</span>
+                    )}
+                  </div>
+                </div>
+
+                {/* Working Hours */}
+                <div style={{
+                  textAlign: 'center',
+                  fontSize: '13px'
+                }}>
+                  <div style={{ fontWeight: '600', color: '#1f2937' }}>
                     {formatTime(wh.start_time)} - {formatTime(wh.end_time)}
                   </div>
-                  {wh.notes && (
-                    <div style={{
-                      fontSize: '12px',
-                      color: 'var(--gray-500)',
-                      fontStyle: 'italic'
-                    }}>
-                      {wh.notes.substring(0, 30)}{wh.notes.length > 30 ? '...' : ''}
-                    </div>
-                  )}
                 </div>
 
-                {/* Total Hours */}
-                <div style={{ textAlign: 'center' }}>
-                  <div style={{
-                    background: 'linear-gradient(135deg, var(--primary) 0%, var(--primary-dark) 100%)',
-                    color: 'white',
-                    padding: 'var(--space-sm) var(--space-md)',
-                    borderRadius: 'var(--radius-lg)',
-                    fontSize: '14px',
-                    fontWeight: '700',
-                    minWidth: '60px',
-                    boxShadow: '0 4px 12px rgba(239, 68, 68, 0.2)'
-                  }}>
-                    {wh.total_hours ? parseFloat(wh.total_hours).toFixed(1) : '0'}h
-                  </div>
-                </div>
-
-                {/* Actions */}
+                {/* Total Hours Badge */}
                 <div style={{
-                  display: 'flex',
-                  gap: 'var(--space-xs)'
+                  background: parseFloat(wh.total_hours) === 4.5 
+                    ? '#10b981' 
+                    : '#f59e0b',
+                  color: 'white',
+                  padding: '6px 12px',
+                  borderRadius: '12px',
+                  fontSize: '12px',
+                  fontWeight: '700',
+                  textAlign: 'center',
+                  minWidth: '45px'
                 }}>
-                  {/* Edit Button */}
-                  <button
-                    onClick={() => handleEdit(wh)}
-                    style={{
-                      background: 'rgba(239, 68, 68, 0.1)',
-                      border: '1px solid rgba(239, 68, 68, 0.2)',
-                      color: 'var(--primary)',
-                      borderRadius: '50%',
-                      width: '32px',
-                      height: '32px',
-                      display: 'flex',
-                      alignItems: 'center',
-                      justifyContent: 'center',
-                      cursor: 'pointer',
-                      transition: 'all 0.3s ease',
-                      fontSize: '14px'
-                    }}
-                    onMouseEnter={(e) => {
-                      e.target.style.background = 'var(--primary)'
-                      e.target.style.color = 'white'
-                      e.target.style.transform = 'scale(1.1)'
-                    }}
-                    onMouseLeave={(e) => {
-                      e.target.style.background = 'rgba(239, 68, 68, 0.1)'
-                      e.target.style.color = 'var(--primary)'
-                      e.target.style.transform = 'scale(1)'
-                    }}
-                    title="Redigera arbetstid"
-                  >
-                    ✎
-                  </button>
-
-                  {/* Delete Button */}
-                  <button
-                    onClick={() => handleDelete(wh.id)}
-                    disabled={deleting === wh.id}
-                    className="btn-delete-small"
-                    title="Ta bort arbetstid"
-                  >
-                    {deleting === wh.id ? '...' : '×'}
-                  </button>
+                  {wh.total_hours ? parseFloat(wh.total_hours).toFixed(1) : '0'}h
                 </div>
               </div>
             ))}
-            
-            <div style={{
-              textAlign: 'center',
-              marginTop: 'var(--space-lg)'
-            }}>
-              <button 
-                onClick={fetchMyHours}
-                style={{
-                  background: 'var(--gray-100)',
-                  border: '1px solid var(--gray-200)',
-                  borderRadius: 'var(--radius-md)',
-                  padding: 'var(--space-sm) var(--space-lg)',
-                  cursor: 'pointer',
-                  fontSize: '14px',
-                  fontWeight: '500',
-                  color: 'var(--gray-700)',
-                  transition: 'all 0.3s ease',
-                  display: 'flex',
-                  alignItems: 'center',
-                  gap: 'var(--space-sm)',
-                  margin: '0 auto'
-                }}
-                onMouseEnter={(e) => {
-                  e.target.style.background = 'var(--gray-200)'
-                  e.target.style.transform = 'translateY(-1px)'
-                }}
-                onMouseLeave={(e) => {
-                  e.target.style.background = 'var(--gray-100)'
-                  e.target.style.transform = 'translateY(0)'
-                }}
-              >
-                Uppdatera lista
-              </button>
+          </div>
+
+          {/* Kompakt Summary */}
+          <div style={{
+            marginTop: '20px',
+            padding: '16px',
+            background: '#f8fafc',
+            borderRadius: '12px',
+            textAlign: 'center',
+            border: '1px solid #e2e8f0'
+          }}>
+            <div style={{ fontSize: '14px', color: '#6b7280' }}>
+              <strong>{getFilterLabel()}:</strong> {stats.totalHours}h över {stats.totalMatches} pass
             </div>
           </div>
-        )}
-      </div>
+        </div>
+      )}
+
+      <style>
+        {`
+          @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
+          }
+        `}
+      </style>
     </div>
   )
 }
